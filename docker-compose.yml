@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # База данных
+  # Базы данных
   postgres:
     image: postgres:15-alpine
     container_name: tot-postgres
@@ -16,8 +16,8 @@ services:
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Redis для кэширования и очередей
   redis:
     image: redis:7-alpine
     container_name: tot-redis
@@ -27,8 +27,9 @@ services:
       - redis_data:/data
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Backend API Gateway
+  # Backend сервисы
   api-gateway:
     build:
       context: ./backend/api-gateway
@@ -39,15 +40,21 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=your-super-secret-jwt-key
-      - ENVIRONMENT=development
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+      - USER_SERVICE_URL=http://user-service:8001
+      - PROFILE_SERVICE_URL=http://profile-service:8002
+      - BOOKING_SERVICE_URL=http://booking-service:8003
+      - GEO_SERVICE_URL=http://geo-service:8004
+      - PAYMENT_SERVICE_URL=http://payment-service:8005
+      - NOTIFICATION_SERVICE_URL=http://notification-service:8006
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # User Service
   user-service:
     build:
       context: ./backend/user-service
@@ -58,14 +65,15 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=your-super-secret-jwt-key
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Profile Service
   profile-service:
     build:
       context: ./backend/profile-service
@@ -76,13 +84,15 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Booking Service
   booking-service:
     build:
       context: ./backend/booking-service
@@ -93,13 +103,15 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Geo Service
   geo-service:
     build:
       context: ./backend/geo-service
@@ -110,14 +122,15 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
-      - YANDEX_MAPS_API_KEY=your-yandex-maps-api-key
+      - YANDEX_MAPS_API_KEY=${YANDEX_MAPS_API_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Payment Service
   payment-service:
     build:
       context: ./backend/payment-service
@@ -128,15 +141,16 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
-      - STRIPE_SECRET_KEY=your-stripe-secret-key
-      - STRIPE_PUBLISHABLE_KEY=your-stripe-publishable-key
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Notification Service
   notification-service:
     build:
       context: ./backend/notification-service
@@ -147,16 +161,18 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
-      - FIREBASE_SERVER_KEY=your-firebase-server-key
-      - TWILIO_ACCOUNT_SID=your-twilio-account-sid
-      - TWILIO_AUTH_TOKEN=your-twilio-auth-token
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - FIREBASE_CREDENTIALS=${FIREBASE_CREDENTIALS}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Chat Service
+  # Заглушки для остальных сервисов
   chat-service:
     build:
       context: ./backend/chat-service
@@ -167,15 +183,14 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
-      - TWILIO_ACCOUNT_SID=your-twilio-account-sid
-      - TWILIO_AUTH_TOKEN=your-twilio-auth-token
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Rating Service
   rating-service:
     build:
       context: ./backend/rating-service
@@ -186,13 +201,14 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Event Service
   event-service:
     build:
       context: ./backend/event-service
@@ -203,13 +219,14 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Emergency Service
   emergency-service:
     build:
       context: ./backend/emergency-service
@@ -220,13 +237,14 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Security Service
   security-service:
     build:
       context: ./backend/security-service
@@ -237,13 +255,15 @@ services:
     environment:
       - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
       - REDIS_URL=redis://redis:6379
+      - ENVIRONMENT=${ENVIRONMENT:-development}
     depends_on:
       - postgres
       - redis
     networks:
       - tot-network
+    restart: unless-stopped
 
-  # Frontend приложения
+  # Frontend приложения (заглушки)
   patient-app:
     build:
       context: ./frontend/patient-app
@@ -253,8 +273,12 @@ services:
       - "3000:3000"
     environment:
       - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_ENVIRONMENT=${ENVIRONMENT:-development}
+    depends_on:
+      - api-gateway
     networks:
       - tot-network
+    restart: unless-stopped
 
   doctor-app:
     build:
@@ -265,8 +289,12 @@ services:
       - "3001:3000"
     environment:
       - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_ENVIRONMENT=${ENVIRONMENT:-development}
+    depends_on:
+      - api-gateway
     networks:
       - tot-network
+    restart: unless-stopped
 
   clinic-web:
     build:
@@ -277,8 +305,12 @@ services:
       - "3002:3000"
     environment:
       - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_ENVIRONMENT=${ENVIRONMENT:-development}
+    depends_on:
+      - api-gateway
     networks:
       - tot-network
+    restart: unless-stopped
 
   admin-panel:
     build:
@@ -289,8 +321,12 @@ services:
       - "3003:3000"
     environment:
       - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_ENVIRONMENT=${ENVIRONMENT:-development}
+    depends_on:
+      - api-gateway
     networks:
       - tot-network
+    restart: unless-stopped
 
   # Мониторинг
   prometheus:
@@ -300,8 +336,17 @@ services:
       - "9090:9090"
     volumes:
       - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
     networks:
       - tot-network
+    restart: unless-stopped
 
   grafana:
     image: grafana/grafana:latest
@@ -309,16 +354,45 @@ services:
     ports:
       - "3004:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
     networks:
       - tot-network
+    restart: unless-stopped
+
+  # Nginx для продакшена
+  nginx:
+    image: nginx:alpine
+    container_name: tot-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+    depends_on:
+      - api-gateway
+      - patient-app
+      - doctor-app
+      - clinic-web
+      - admin-panel
+    networks:
+      - tot-network
+    restart: unless-stopped
+    profiles:
+      - production
 
 volumes:
   postgres_data:
+    driver: local
   redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
   grafana_data:
+    driver: local
 
 networks:
   tot-network:
