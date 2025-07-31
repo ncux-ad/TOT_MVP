@@ -43,8 +43,8 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRATION = int(os.getenv("JWT_EXPIRATION_HOURS", 24))
 
 # База данных
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://tot_user:tot_password@localhost:5432/tot_mvp")
-engine = create_engine(DATABASE_URL)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./tot_mvp.db")
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
