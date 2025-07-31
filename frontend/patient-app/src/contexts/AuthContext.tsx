@@ -1,6 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert } from 'react-native';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '../services/api';
 
 interface User {
@@ -8,189 +6,108 @@ interface User {
   email: string;
   first_name: string;
   last_name: string;
-  phone?: string;
   role: string;
-  is_verified: boolean;
+  phone?: string;
 }
 
-interface AuthContextData {
+interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (userData: SignUpData) => Promise<void>;
-  signOut: () => Promise<void>;
-  updateUser: (userData: Partial<User>) => Promise<void>;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  register: (userData: RegisterData) => Promise<void>;
+  logout: () => void;
 }
 
-interface SignUpData {
+interface RegisterData {
   email: string;
   password: string;
   first_name: string;
   last_name: string;
+  role: string;
   phone?: string;
-  role?: string;
 }
 
-const AuthContext = createContext<AuthContextData>({} as AuthContextData);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStoredUser();
+    // Проверяем токен при загрузке
+    const token = localStorage.getItem('token');
+    if (token) {
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      checkAuth();
+    } else {
+      setLoading(false);
+    }
   }, []);
 
-  const loadStoredUser = async () => {
+  const checkAuth = async () => {
     try {
-      const storedUser = await AsyncStorage.getItem('@TOT:user');
-      const storedToken = await AsyncStorage.getItem('@TOT:token');
-
-      if (storedUser && storedToken) {
-        const userData = JSON.parse(storedUser);
-        setUser(userData);
-        
-        // Устанавливаем токен в API
-        api.defaults.headers.Authorization = `Bearer ${storedToken}`;
-      }
+      const response = await api.get('/auth/me');
+      setUser(response.data);
     } catch (error) {
-      console.error('Error loading stored user:', error);
+      localStorage.removeItem('token');
+      delete api.defaults.headers.common['Authorization'];
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const login = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
-      
-      const response = await api.post('/auth/login', {
-        email,
-        password,
-      });
-
+      const response = await api.post('/auth/login', { email, password });
       const { access_token, user: userData } = response.data;
-
-      // Сохраняем данные в AsyncStorage
-      await AsyncStorage.setItem('@TOT:user', JSON.stringify(userData));
-      await AsyncStorage.setItem('@TOT:token', access_token);
-
-      // Устанавливаем токен в API
-      api.defaults.headers.Authorization = `Bearer ${access_token}`;
-
+      
+      localStorage.setItem('token', access_token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       setUser(userData);
-    } catch (error: any) {
-      console.error('Sign in error:', error);
-      
-      let errorMessage = 'Ошибка входа в систему';
-      if (error.response?.data?.detail) {
-        errorMessage = error.response.data.detail;
-      }
-      
-      Alert.alert('Ошибка', errorMessage);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signUp = async (userData: SignUpData) => {
-    try {
-      setIsLoading(true);
-      
-      const response = await api.post('/auth/register', {
-        ...userData,
-        role: userData.role || 'patient',
-      });
-
-      const { access_token, user: newUser } = response.data;
-
-      // Сохраняем данные в AsyncStorage
-      await AsyncStorage.setItem('@TOT:user', JSON.stringify(newUser));
-      await AsyncStorage.setItem('@TOT:token', access_token);
-
-      // Устанавливаем токен в API
-      api.defaults.headers.Authorization = `Bearer ${access_token}`;
-
-      setUser(newUser);
-    } catch (error: any) {
-      console.error('Sign up error:', error);
-      
-      let errorMessage = 'Ошибка регистрации';
-      if (error.response?.data?.detail) {
-        errorMessage = error.response.data.detail;
-      }
-      
-      Alert.alert('Ошибка', errorMessage);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const signOut = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Очищаем данные из AsyncStorage
-      await AsyncStorage.removeItem('@TOT:user');
-      await AsyncStorage.removeItem('@TOT:token');
-
-      // Удаляем токен из API
-      delete api.defaults.headers.Authorization;
-
-      setUser(null);
     } catch (error) {
-      console.error('Sign out error:', error);
-      Alert.alert('Ошибка', 'Ошибка при выходе из системы');
-    } finally {
-      setIsLoading(false);
+      throw new Error('Ошибка входа. Проверьте email и пароль.');
     }
   };
 
-  const updateUser = async (userData: Partial<User>) => {
+  const register = async (userData: RegisterData) => {
     try {
-      setIsLoading(true);
+      const response = await api.post('/auth/register', userData);
+      const { access_token, user: newUser } = response.data;
       
-      const response = await api.put('/auth/me', userData);
-      const updatedUser = response.data;
-
-      // Обновляем данные в AsyncStorage
-      await AsyncStorage.setItem('@TOT:user', JSON.stringify(updatedUser));
-
-      setUser(updatedUser);
-    } catch (error: any) {
-      console.error('Update user error:', error);
-      
-      let errorMessage = 'Ошибка обновления профиля';
-      if (error.response?.data?.detail) {
-        errorMessage = error.response.data.detail;
-      }
-      
-      Alert.alert('Ошибка', errorMessage);
-      throw error;
-    } finally {
-      setIsLoading(false);
+      localStorage.setItem('token', access_token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+      setUser(newUser);
+    } catch (error) {
+      throw new Error('Ошибка регистрации. Попробуйте снова.');
     }
   };
 
-  const value = {
+  const logout = () => {
+    localStorage.removeItem('token');
+    delete api.defaults.headers.common['Authorization'];
+    setUser(null);
+  };
+
+  const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
-    isLoading,
-    signIn,
-    signUp,
-    signOut,
-    updateUser,
+    loading,
+    login,
+    register,
+    logout,
   };
 
   return (

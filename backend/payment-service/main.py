@@ -23,8 +23,6 @@ try:
     from yookassa import Payment as YooKassaPayment
     from yookassa import Configuration
     from yookassa.domain.request import PaymentRequest
-    from yookassa.domain.common import Currency
-    from yookassa.domain.common import PaymentMethodType
 except ImportError:
     print("ЮKassa SDK не установлен. Установите: pip install yookassa")
 
@@ -45,9 +43,13 @@ SBP_MERCHANT_ID = os.getenv("SBP_MERCHANT_ID")
 SBP_PRIVATE_KEY_PATH = os.getenv("SBP_PRIVATE_KEY_PATH")
 
 # Инициализация ЮKassa
-if YUKASSA_SHOP_ID and YUKASSA_SECRET_KEY:
-    Configuration.account_id = YUKASSA_SHOP_ID
-    Configuration.secret_key = YUKASSA_SECRET_KEY
+try:
+    from yookassa import Configuration
+    if YUKASSA_SHOP_ID and YUKASSA_SECRET_KEY:
+        Configuration.account_id = YUKASSA_SHOP_ID
+        Configuration.secret_key = YUKASSA_SECRET_KEY
+except ImportError:
+    print("ЮKassa SDK не установлен. Установите: pip install yookassa")
 
 # Models
 class Payment(Base):
@@ -254,10 +256,14 @@ class YooKassaIntegration:
     def create_payment(self, amount: float, description: str, return_url: str, metadata: dict = None) -> YooKassaPaymentResponse:
         """Создает платеж в ЮKassa"""
         try:
+            # Проверяем, что yookassa доступен
+            if not YUKASSA_SHOP_ID or not YUKASSA_SECRET_KEY:
+                raise HTTPException(status_code=500, detail="ЮKassa не настроена")
+            
             payment_request = PaymentRequest(
                 amount={
                     "value": str(amount),
-                    "currency": Currency.RUB
+                    "currency": "RUB"
                 },
                 confirmation={
                     "type": "redirect",
@@ -270,13 +276,13 @@ class YooKassaIntegration:
             payment = YooKassaPayment.create(payment_request)
             
             return YooKassaPaymentResponse(
-                id=payment.id,
-                status=payment.status,
-                paid=payment.paid,
-                amount=payment.amount.__dict__,
-                confirmation=payment.confirmation.__dict__,
-                created_at=payment.created_at,
-                description=payment.description,
+                id=payment.id or "",
+                status=payment.status or "",
+                paid=payment.paid or False,
+                amount={"value": str(amount), "currency": "RUB"},
+                confirmation={"type": "redirect", "return_url": return_url},
+                created_at=payment.created_at or "",
+                description=payment.description or description,
                 metadata=payment.metadata
             )
         except Exception as e:
