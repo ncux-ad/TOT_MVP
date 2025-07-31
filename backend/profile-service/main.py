@@ -223,7 +223,7 @@ async def update_profile(
     for field, value in profile_update.dict(exclude_unset=True).items():
         setattr(profile, field, value)
     
-    profile.updated_at = datetime.utcnow()
+    profile.updated_at = datetime.utcnow()  # pyright: ignore[reportAttributeAccessIssue]
     db.commit()
     db.refresh(profile)
     return profile
@@ -261,7 +261,7 @@ async def update_doctor_profile(
     for field, value in profile_update.dict(exclude_unset=True).items():
         setattr(profile, field, value)
     
-    profile.updated_at = datetime.utcnow()
+    profile.updated_at = datetime.utcnow()  # pyright: ignore[reportAttributeAccessIssue]
     db.commit()
     db.refresh(profile)
     return profile
@@ -315,7 +315,7 @@ async def update_clinic_profile(
     for field, value in profile_update.dict(exclude_unset=True).items():
         setattr(profile, field, value)
     
-    profile.updated_at = datetime.utcnow()
+    profile.updated_at = datetime.utcnow()  # pyright: ignore[reportAttributeAccessIssue]
     db.commit()
     db.refresh(profile)
     return profile
