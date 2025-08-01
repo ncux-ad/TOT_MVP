@@ -15,7 +15,7 @@ Set-Location "frontend\patient-app"
 # Проверяем, установлены ли зависимости
 if (-not (Test-Path "node_modules")) {
     Write-Host "📦 Установка зависимостей..." -ForegroundColor Cyan
-    npm install
+    & cmd /c "npm install"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ Ошибка установки зависимостей!" -ForegroundColor Red
         exit 1
@@ -38,7 +38,7 @@ Write-Host "🌐 Сетевой доступ: http://192.168.1.107:3000" -Foregr
 Write-Host "⏹️ Для остановки нажмите Ctrl+C" -ForegroundColor Cyan
 
 # Запускаем npm start в фоновом режиме
-$process = Start-Process -FilePath "npm" -ArgumentList "start" -WindowStyle Normal -PassThru
+$process = Start-Process -FilePath "cmd" -ArgumentList "/c npm start" -WindowStyle Normal -PassThru
 
 # Ждем немного для запуска
 Start-Sleep -Seconds 10
