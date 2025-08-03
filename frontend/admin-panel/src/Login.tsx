@@ -1,11 +1,26 @@
 /**
  * @file: Login.tsx
- * @description: Компонент входа в админ-панель
- * @dependencies: React, axios
+ * @description: Компонент входа в админ-панель с Material-UI
+ * @dependencies: React, axios, @mui/material, @mui/icons-material
  * @created: 2024-01-28
  */
 import React, { useState } from 'react';
 import axios from 'axios';
+import {
+  Box,
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  Alert,
+  CircularProgress,
+  Container
+} from '@mui/material';
+import {
+  Login as LoginIcon,
+  Email as EmailIcon,
+  Lock as LockIcon
+} from '@mui/icons-material';
 
 interface LoginProps {
   onLoginSuccess: () => void;
@@ -65,86 +80,93 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div style={{ 
-      maxWidth: '400px', 
-      margin: '50px auto', 
-      padding: '20px',
-      border: '1px solid #ddd',
-      borderRadius: '8px'
-    }}>
-      <h2>Вход в админ-панель</h2>
-      
-      <form onSubmit={handleLogin}>
-        <div style={{ marginBottom: '15px' }}>
-          <label>Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ 
-              width: '100%', 
-              padding: '8px', 
-              marginTop: '5px',
-              border: '1px solid #ccc',
-              borderRadius: '4px'
-            }}
-            required
-          />
-        </div>
-        
-        <div style={{ marginBottom: '15px' }}>
-          <label>Пароль:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ 
-              width: '100%', 
-              padding: '8px', 
-              marginTop: '5px',
-              border: '1px solid #ccc',
-              borderRadius: '4px'
-            }}
-            required
-          />
-        </div>
-        
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
+    <Container maxWidth="sm">
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        minHeight="100vh"
+      >
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 4, 
             width: '100%',
-            padding: '10px',
-            backgroundColor: loading ? '#ccc' : '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer'
+            maxWidth: 400
           }}
         >
-          {loading ? 'Вход...' : 'Войти'}
-        </button>
-      </form>
-      
-      {message && (
-        <div style={{ 
-          marginTop: '15px', 
-          padding: '10px', 
-          backgroundColor: message.includes('Успешный') ? '#d4edda' : '#f8d7da',
-          border: '1px solid ' + (message.includes('Успешный') ? '#c3e6cb' : '#f5c6cb'),
-          borderRadius: '4px',
-          color: message.includes('Успешный') ? '#155724' : '#721c24'
-        }}>
-          {message}
-        </div>
-      )}
-      
-      <div style={{ marginTop: '20px', fontSize: '14px', color: '#666' }}>
-        <strong>Демо-данные:</strong><br />
-        Email: admin@tot.ru<br />
-        Пароль: admin123
-      </div>
-    </div>
+          <Box textAlign="center" mb={3}>
+            <Typography variant="h4" component="h1" gutterBottom>
+              Админ-панель ТОТ
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              Вход в систему управления
+            </Typography>
+          </Box>
+          
+          <form onSubmit={handleLogin}>
+            <TextField
+              fullWidth
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              margin="normal"
+              required
+              InputProps={{
+                startAdornment: <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />
+              }}
+            />
+            
+            <TextField
+              fullWidth
+              label="Пароль"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              margin="normal"
+              required
+              InputProps={{
+                startAdornment: <LockIcon sx={{ mr: 1, color: 'text.secondary' }} />
+              }}
+            />
+            
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={20} /> : <LoginIcon />}
+              sx={{ mt: 3, mb: 2 }}
+            >
+              {loading ? 'Вход...' : 'Войти'}
+            </Button>
+          </form>
+          
+          {message && (
+            <Alert 
+              severity={message.includes('Успешный') ? 'success' : 'error'}
+              sx={{ mt: 2 }}
+            >
+              {message}
+            </Alert>
+          )}
+          
+          <Box mt={3} p={2} bgcolor="grey.50" borderRadius={1}>
+            <Typography variant="body2" color="textSecondary" gutterBottom>
+              <strong>Демо-данные:</strong>
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              Email: admin@tot.ru
+            </Typography>
+            <Typography variant="body2" color="textSecondary">
+              Пароль: admin123
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
+    </Container>
   );
 };
 

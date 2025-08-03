@@ -1,11 +1,34 @@
 /**
  * @file: Users.tsx
- * @description: Компонент списка пользователей
- * @dependencies: React, axios
+ * @description: Компонент списка пользователей с Material-UI
+ * @dependencies: React, axios, @mui/material, @mui/icons-material
  * @created: 2024-01-28
  */
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import {
+  Box,
+  Typography,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Button,
+  CircularProgress,
+  Alert,
+  IconButton,
+  Tooltip
+} from '@mui/material';
+import {
+  Refresh as RefreshIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Visibility as ViewIcon
+} from '@mui/icons-material';
 
 interface User {
   id: string;
@@ -17,7 +40,7 @@ interface User {
 }
 
 const Users: React.FC = () => {
-  console.log('👥 Компонент Users загружен');
+  console.log('👥 Компонент Users загружен (Material-UI версия)');
   
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,101 +81,157 @@ const Users: React.FC = () => {
     fetchUsers();
   }, []);
 
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin':
+        return 'error';
+      case 'doctor':
+        return 'primary';
+      case 'patient':
+        return 'success';
+      default:
+        return 'default';
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    console.log('✏️ Редактирование пользователя:', user);
+    // TODO: Открыть модальное окно редактирования
+  };
+
+  const handleDeleteUser = (user: User) => {
+    console.log('🗑️ Удаление пользователя:', user);
+    // TODO: Показать диалог подтверждения
+  };
+
+  const handleViewUser = (user: User) => {
+    console.log('👁️ Просмотр пользователя:', user);
+    // TODO: Открыть модальное окно просмотра
+  };
+
   if (loading) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h2>Загрузка пользователей...</h2>
-      </div>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: '20px' }}>
-        <h2>Ошибка</h2>
-        <p style={{ color: 'red' }}>{error}</p>
-        <button onClick={fetchUsers} style={{ 
-          padding: '10px 20px', 
-          backgroundColor: '#007bff', 
-          color: 'white', 
-          border: 'none', 
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}>
+      <Box p={3}>
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+        <Button 
+          variant="contained" 
+          onClick={fetchUsers}
+          startIcon={<RefreshIcon />}
+        >
           Попробовать снова
-        </button>
-      </div>
+        </Button>
+      </Box>
     );
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      <h2>Список пользователей ({users.length})</h2>
+    <Box p={3}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+        <Typography variant="h4" component="h1">
+          Пользователи ({users.length})
+        </Typography>
+        <Button 
+          variant="contained" 
+          onClick={fetchUsers}
+          startIcon={<RefreshIcon />}
+        >
+          Обновить
+        </Button>
+      </Box>
       
       {users.length === 0 ? (
-        <p>Пользователи не найдены</p>
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <Typography variant="h6" color="textSecondary">
+            Пользователи не найдены
+          </Typography>
+        </Paper>
       ) : (
-        <table style={{ 
-          width: '100%', 
-          borderCollapse: 'collapse',
-          border: '1px solid #ddd'
-        }}>
-          <thead>
-            <tr style={{ backgroundColor: '#f5f5f5' }}>
-              <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>ID</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>Email</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>Имя</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>Фамилия</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>Роль</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'left' }}>Активен</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
-              <tr key={user.id}>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                  {user.id.substring(0, 8)}...
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{user.email}</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{user.first_name}</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{user.last_name}</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    backgroundColor: user.role === 'admin' ? '#dc3545' : '#28a745',
-                    color: 'white',
-                    fontSize: '12px'
-                  }}>
-                    {user.role}
-                  </span>
-                </td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                  <span style={{
-                    color: user.is_active ? 'green' : 'red'
-                  }}>
-                    {user.is_active ? '✅ Да' : '❌ Нет'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <TableContainer component={Paper} elevation={2}>
+          <Table>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Email</TableCell>
+                <TableCell>Имя</TableCell>
+                <TableCell>Фамилия</TableCell>
+                <TableCell>Роль</TableCell>
+                <TableCell>Статус</TableCell>
+                <TableCell align="center">Действия</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {users.map((user) => (
+                <TableRow key={user.id} hover>
+                  <TableCell>
+                    <Typography variant="body2" color="textSecondary">
+                      {user.id.substring(0, 8)}...
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.first_name}</TableCell>
+                  <TableCell>{user.last_name}</TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={user.role} 
+                      color={getRoleColor(user.role) as any}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={user.is_active ? 'Активен' : 'Неактивен'}
+                      color={user.is_active ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell align="center">
+                    <Box display="flex" gap={1} justifyContent="center">
+                      <Tooltip title="Просмотр">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleViewUser(user)}
+                          color="primary"
+                        >
+                          <ViewIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Редактировать">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleEditUser(user)}
+                          color="primary"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Удалить">
+                        <IconButton 
+                          size="small" 
+                          onClick={() => handleDeleteUser(user)}
+                          color="error"
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       )}
-      
-      <div style={{ marginTop: '20px' }}>
-        <button onClick={fetchUsers} style={{ 
-          padding: '10px 20px', 
-          backgroundColor: '#28a745', 
-          color: 'white', 
-          border: 'none', 
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}>
-          Обновить список
-        </button>
-      </div>
-    </div>
+    </Box>
   );
 };
 
