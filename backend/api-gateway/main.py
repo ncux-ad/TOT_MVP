@@ -314,6 +314,183 @@ async def get_admin_profile(user_token: dict = Depends(verify_token)):
         raise HTTPException(status_code=403, detail="Доступ запрещен")
     return await forward_request("user", "/auth/me", "GET", user_token=user_token)
 
+# Admin Panel API endpoints
+@app.get("/api/users")
+async def api_get_users(
+    page: int = 1,
+    size: int = 10,
+    user_token: dict = Depends(verify_token)
+):
+    """Получение списка пользователей через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", f"/users?page={page}&limit={size}", "GET", user_token=user_token)
+
+@app.get("/api/users/{user_id}")
+async def api_get_user(user_id: str, user_token: dict = Depends(verify_token)):
+    """Получение информации о пользователе через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", f"/users/{user_id}", "GET", user_token=user_token)
+
+@app.post("/api/users")
+async def api_create_user(data: dict, user_token: dict = Depends(verify_token)):
+    """Создание пользователя через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", "/auth/register", "POST", data, user_token=user_token)
+
+@app.put("/api/users/{user_id}")
+async def api_update_user(user_id: str, data: dict, user_token: dict = Depends(verify_token)):
+    """Обновление пользователя через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", f"/users/{user_id}", "PUT", data, user_token=user_token)
+
+@app.delete("/api/users/{user_id}")
+async def api_delete_user(user_id: str, user_token: dict = Depends(verify_token)):
+    """Удаление пользователя через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", f"/users/{user_id}", "DELETE", user_token=user_token)
+
+@app.get("/api/doctors")
+async def api_get_doctors(
+    page: int = 1,
+    size: int = 10,
+    user_token: dict = Depends(verify_token)
+):
+    """Получение списка врачей через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", "/doctor-profiles/", "GET", user_token=user_token)
+
+@app.get("/api/doctors/{doctor_id}")
+async def api_get_doctor(doctor_id: str, user_token: dict = Depends(verify_token)):
+    """Получение информации о враче через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", f"/doctor-profiles/{doctor_id}", "GET", user_token=user_token)
+
+@app.post("/api/doctors")
+async def api_create_doctor(data: dict, user_token: dict = Depends(verify_token)):
+    """Создание врача через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", "/doctor-profiles/", "POST", data, user_token=user_token)
+
+@app.put("/api/doctors/{doctor_id}")
+async def api_update_doctor(doctor_id: str, data: dict, user_token: dict = Depends(verify_token)):
+    """Обновление врача через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", f"/doctor-profiles/{doctor_id}", "PUT", data, user_token=user_token)
+
+@app.delete("/api/doctors/{doctor_id}")
+async def api_delete_doctor(doctor_id: str, user_token: dict = Depends(verify_token)):
+    """Удаление врача через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", f"/doctor-profiles/{doctor_id}", "DELETE", user_token=user_token)
+
+@app.get("/api/doctors/list")
+async def api_get_doctors_list(user_token: dict = Depends(verify_token)):
+    """Получение списка врачей для форм"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", "/doctor-profiles/", "GET", user_token=user_token)
+
+@app.get("/api/clinics")
+async def api_get_clinics(
+    page: int = 1,
+    size: int = 10,
+    user_token: dict = Depends(verify_token)
+):
+    """Получение списка клиник через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", "/clinic-profiles/", "GET", user_token=user_token)
+
+@app.get("/api/clinics/{clinic_id}")
+async def api_get_clinic(clinic_id: str, user_token: dict = Depends(verify_token)):
+    """Получение информации о клинике через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", f"/clinic-profiles/{clinic_id}", "GET", user_token=user_token)
+
+@app.post("/api/clinics")
+async def api_create_clinic(data: dict, user_token: dict = Depends(verify_token)):
+    """Создание клиники через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", "/clinic-profiles/", "POST", data, user_token=user_token)
+
+@app.put("/api/clinics/{clinic_id}")
+async def api_update_clinic(clinic_id: str, data: dict, user_token: dict = Depends(verify_token)):
+    """Обновление клиники через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", f"/clinic-profiles/{clinic_id}", "PUT", data, user_token=user_token)
+
+@app.delete("/api/clinics/{clinic_id}")
+async def api_delete_clinic(clinic_id: str, user_token: dict = Depends(verify_token)):
+    """Удаление клиники через API"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", f"/clinic-profiles/{clinic_id}", "DELETE", user_token=user_token)
+
+@app.get("/api/clinics/list")
+async def api_get_clinics_list(user_token: dict = Depends(verify_token)):
+    """Получение списка клиник для форм"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("profile", "/clinic-profiles/", "GET", user_token=user_token)
+
+@app.get("/api/patients")
+async def api_get_patients(user_token: dict = Depends(verify_token)):
+    """Получение списка пациентов"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", "/users?role=patient", "GET", user_token=user_token)
+
+@app.get("/api/dashboard/stats")
+async def api_get_dashboard_stats(user_token: dict = Depends(verify_token)):
+    """Получение статистики для дашборда"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    
+    try:
+        # Получаем статистику от всех сервисов
+        users_response = await forward_request("user", "/users/count", "GET", user_token=user_token)
+        doctors_response = await forward_request("profile", "/doctor-profiles/count", "GET", user_token=user_token)
+        clinics_response = await forward_request("profile", "/clinic-profiles/count", "GET", user_token=user_token)
+        
+        # Извлекаем данные
+        total_users = users_response.get("data", {}).get("count", 0) if users_response.get("status_code") == 200 else 0
+        total_doctors = doctors_response.get("data", {}).get("count", 0) if doctors_response.get("status_code") == 200 else 0
+        total_clinics = clinics_response.get("data", {}).get("count", 0) if clinics_response.get("status_code") == 200 else 0
+        
+        return {
+            "total_users": total_users,
+            "total_doctors": total_doctors,
+            "total_clinics": total_clinics,
+            "total_appointments": 0,  # Пока нет Booking Service
+            "active_appointments": 0,
+            "pending_appointments": 0,
+            "completed_appointments": 0
+        }
+    except Exception as e:
+        logger.error(f"Ошибка получения статистики: {e}")
+        return {
+            "total_users": 0,
+            "total_doctors": 0,
+            "total_clinics": 0,
+            "total_appointments": 0,
+            "active_appointments": 0,
+            "pending_appointments": 0,
+            "completed_appointments": 0
+        }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(

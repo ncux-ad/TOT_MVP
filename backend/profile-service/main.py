@@ -237,6 +237,12 @@ async def create_doctor_profile(profile: DoctorProfileCreate, db: Session = Depe
     db.refresh(db_profile)
     return db_profile
 
+@app.get("/doctor-profiles/count")
+async def get_doctors_count(db: Session = Depends(get_db)):
+    """Получение количества врачей"""
+    count = db.query(DoctorProfile).count()
+    return {"count": count}
+
 @app.get("/doctor-profiles/{user_id}", response_model=DoctorProfileResponse)
 async def get_doctor_profile(user_id: int, db: Session = Depends(get_db)):
     profile = db.query(DoctorProfile).filter(DoctorProfile.user_id == user_id).first()
@@ -290,6 +296,12 @@ async def create_clinic_profile(profile: ClinicProfileCreate, db: Session = Depe
     db.commit()
     db.refresh(db_profile)
     return db_profile
+
+@app.get("/clinic-profiles/count")
+async def get_clinics_count(db: Session = Depends(get_db)):
+    """Получение количества клиник"""
+    count = db.query(ClinicProfile).count()
+    return {"count": count}
 
 @app.get("/clinic-profiles/{user_id}", response_model=ClinicProfileResponse)
 async def get_clinic_profile(user_id: int, db: Session = Depends(get_db)):

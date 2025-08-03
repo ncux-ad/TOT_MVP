@@ -362,6 +362,12 @@ async def update_current_user(
         updated_at=current_user.updated_at
     )
 
+@app.get("/users/count")
+async def get_users_count(db: Session = Depends(get_db)):
+    """Получение количества пользователей"""
+    count = db.query(User).count()
+    return {"count": count}
+
 @app.get("/users/{user_id}", response_model=UserResponse)
 async def get_user(user_id: str, db: Session = Depends(get_db)):
     """Получение информации о пользователе по ID"""
