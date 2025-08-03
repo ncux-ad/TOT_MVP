@@ -60,10 +60,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkAuth = async () => {
     try {
       const response = await api.get('/auth/me');
-      setUser(response.data);
-    } catch (error) {
-      localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
+      
+      // API Gateway оборачивает ответ в объект с data
+      const userData = response.data.data || response.data;
+      setUser(userData);
+    } catch (error: any) {
+      console.error('Ошибка проверки аутентификации:', error);
+      // Если ошибка 401, очищаем токен
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        delete api.defaults.headers.common['Authorization'];
+      }
+      // Не выбрасываем ошибку, просто очищаем состояние
     } finally {
       setLoading(false);
     }
@@ -72,12 +80,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (email: string, password: string) => {
     try {
       const response = await api.post('/auth/login', { email, password });
-      const { access_token, user: userData } = response.data;
+      
+      // API Gateway оборачивает ответ в объект с data
+      const responseData = response.data.data || response.data;
+      const { access_token, user: userData } = responseData;
       
       localStorage.setItem('token', access_token);
       api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       setUser(userData);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Ошибка входа:', error);
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
       throw new Error('Ошибка входа. Проверьте email и пароль.');
     }
   };
@@ -85,12 +100,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      const { access_token, user: newUser } = response.data;
+      // API Gateway оборачивает ответ в объект с data
+      const responseData = response.data.data || response.data;
+      const { access_token, user: newUser } = responseData;
       
       localStorage.setItem('token', access_token);
       api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       setUser(newUser);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Ошибка регистрации:', error);
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail);
+      }
       throw new Error('Ошибка регистрации. Попробуйте снова.');
     }
   };

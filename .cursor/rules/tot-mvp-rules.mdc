@@ -1,0 +1,301 @@
+---
+alwaysApply: true
+---
+
+# Cursor AI Rules
+
+Consolidated best practices for **Python**, **FastAPI**, **React**, **Vite**, **Tailwind CSS**, **Three.js**, **React Three Fiber**, **Next UI**, **microservices**, and **serverless environments**, emphasizing functional programming, modularity, performance, security, and documentation in **English**.
+
+## General Principles
+- **Response Language**: Respond in **Russian**, concisely, technically, avoiding elaboration unless requested.
+- **Functional Programming**: Use functional, declarative code; avoid classes unless justified.
+- **Modularity**: Ensure single-responsibility modules, avoid code duplication.
+- **Naming**: Use descriptive names with auxiliary verbs (e.g., `is_active`, `has_permission`).
+- **RORO Pattern**: Apply Receive an Object, Return an Object pattern.
+- **Documentation**: Use **Google-style docstrings** for all functions, methods, and components.
+- **Code Style**: Adhere to **PEP 8**, format with **Ruff**, enforce linting via pre-commit hooks.
+- **SOLID, KISS, DRY**: Follow for maintainable, simple, reusable code.
+- **Code Review**: Conduct reviews for all changes, remove unused code/comments.
+
+## Documentation Process
+- **Changelog** (`/docs/changelog.md`):
+  ```markdown
+  ## [DD-MM-YYYY] - Change Summary
+  ### Added
+  - New features
+  ### Changed
+  - Modifications
+  ### Fixed
+  - Bug fixes
+````
+
+* **Task Tracker** (`/docs/tasktracker.md`):
+
+  ```markdown
+  ## Task: [Task Name]
+  - **Status**: [Not Started/In Progress/Completed]
+  - **Description**: [Detailed description]
+  - **Steps**:
+    - [x] Completed step
+    - [ ] Current step
+    - [ ] Planned step
+  - **Dependencies**: [Related tasks]
+  ```
+* **File Headers**:
+
+  ```python
+  """
+  @file: [filename]
+  @description: [brief description]
+  @dependencies: [related components/files]
+  @created: [date]
+  """
+  ```
+* **Project Documentation** (`/docs/project.md`): Update architecture, component interactions, and **Mermaid** diagrams.
+* **API Documentation**: Maintain up-to-date API/interface docs with **FastAPI OpenAPI** or **React Storybook**.
+* **Process**:
+
+  * Document before coding new steps.
+  * Seek confirmation before significant steps.
+  * Provide summary (≤5 points) after each step.
+  * Propose 2-3 alternatives for ambiguities, explaining trade-offs.
+  * Maintain task context and project goals.
+  * Remind periodically of task status and remaining steps.
+  * Split large tasks into subtasks.
+
+## Python and FastAPI
+
+### Core Guidelines
+
+* **Python Version**: 3.10+.
+* **Asynchronous Programming**: Use `async def` for I/O-bound tasks, `def` for pure functions.
+* **Type Hints**: Mandatory type annotations with `typing`; use **Pydantic** for validation.
+* **File Structure**:
+
+  * `routers/[module]_routes.py`
+  * `models/[module]_schemas.py`
+  * `utils/[module]_utils.py`
+  * `static/` (static content)
+* **Error Handling**:
+
+  * Check edge cases first.
+  * Use early returns (`if-return`) to avoid nested conditions.
+  * Avoid unnecessary `else`.
+  * Implement custom errors and logging with `logging`.
+* **Performance**:
+
+  * Minimize blocking I/O; use async for database/external API calls.
+  * Cache static/frequent data (**Redis**, `functools.lru_cache`).
+  * Apply lazy loading for large datasets.
+
+### FastAPI-Specific Guidelines
+
+* **Routes**: Use `APIRouter` for modular, RESTful routes with explicit return types.
+* **Validation**: Use **Pydantic BaseModel** for request/response validation.
+* **Middleware**: Implement for logging, monitoring, error handling.
+* **Lifespan**: Use `lifespan` context managers instead of `@app.on_event`.
+* **Dependencies**: Leverage **FastAPI dependency injection** for state/resources.
+* **Errors**: Use `HTTPException` for expected errors, model as HTTP responses.
+* **Optimization**: Use async functions for I/O-bound tasks, caching, lazy loading.
+
+### Dependencies
+
+* **Core**: FastAPI, Pydantic v2, asyncpg/aiomysql, SQLAlchemy 2.0 (optional).
+* **Dependency Management**: Poetry/Rye.
+* **Formatting**: Ruff (replaces black, isort, flake8).
+* **Testing**: pytest, ≥90% coverage.
+* **Containerization**: Docker, docker-compose.
+* **Server**: gunicorn, uvicorn (with nginx/caddy).
+* **Process Management**: systemd, supervisor.
+
+## Microservices and Serverless
+
+### Core Guidelines
+
+* **Stateless Design**: Store state in external systems (**Redis**).
+* **API Gateway**: Integrate with Kong/AWS API Gateway for routing, rate limiting, security.
+* **Inter-Service Communication**: Use message brokers (**RabbitMQ**, **Kafka**) for event-driven architecture.
+* **Serverless**:
+
+  * Optimize for AWS Lambda/Azure Functions, minimize cold starts.
+  * Use lightweight containers or standalone binaries.
+* **Scalability**: Implement auto-scaling, load balancing (**Istio**, **Linkerd**).
+* **Monitoring**: Use **Prometheus**, **Grafana**, **OpenTelemetry** for tracing, **ELK Stack**/**AWS CloudWatch** for logging.
+* **Security**: Apply **OAuth2**, **JWT**, **CORS**, **CSP**, content validation (**OWASP Zap**).
+
+## Optimizing for Performance and Scalability
+
+* **Asynchronous Programming**: Leverage FastAPI's async capabilities to efficiently handle high volumes of simultaneous connections without blocking.
+* **High Throughput Services**: Design backend services to support high throughput and low latency. Use databases optimized for read-heavy workloads, such as Elasticsearch, to handle large-scale data efficiently.
+* **Caching Layers**: Implement caching layers (e.g., Redis, Memcached) to reduce the load on primary databases and improve API response times.
+* **Load Balancing and Service Mesh**: Apply load balancing and service mesh technologies like Istio or Linkerd to ensure efficient and fault-tolerant service-to-service communication.
+
+## Advanced Middleware and Security
+
+* **Custom Middleware**: Implement custom middleware to enable detailed logging, tracing, and monitoring of API requests, ensuring observability of service performance.
+* **Distributed Tracing**: Use OpenTelemetry or similar libraries to implement distributed tracing, enabling visibility into microservices communication.
+* **Security Best Practices**: Enforce OAuth2 authentication for secure API access, utilize rate limiting, and apply DDoS protection mechanisms.
+* **Security Headers and Validation**: Use security headers (e.g., CORS, CSP) to enhance security and apply content validation techniques with tools like OWASP Zap for proactive security checks.
+
+## Monitoring and Logging
+
+* **Monitoring with Prometheus and Grafana**: Integrate Prometheus for monitoring FastAPI applications and set up Grafana dashboards to visualize metrics. Configure alerts to ensure timely intervention when necessary.
+* **Structured Logging**: Use structured logging techniques to improve log analysis and make logs more accessible for troubleshooting and debugging.
+* **Centralized Logging**: Integrate with centralized logging systems like the ELK Stack (Elasticsearch, Logstash, Kibana) or AWS CloudWatch for aggregated logging, making it easier to trace issues across distributed systems.
+
+## Key Conventions
+
+1. **Microservices Principles**: Build scalable and maintainable services by adhering to microservices architecture principles, such as modularity, statelessness, and clear service responsibilities.
+2. **Serverless and Cloud-Native Deployments**: Focus on optimizing FastAPI applications for serverless and cloud-native environments to minimize infrastructure management and improve scalability.
+3. **Advanced Security, Monitoring, and Optimization**: Implement advanced techniques for securing APIs, ensuring high performance, and maintaining robust monitoring systems for operational excellence.
+
+For further details, refer to the official documentation of FastAPI, microservices, and serverless patterns for advanced usage and best practices.
+````markdown
+# Cursor AI Rules
+
+Consolidated best practices for **Python**, **FastAPI**, **React**, **Vite**, **Tailwind CSS**, **Three.js**, **React Three Fiber**, **Next UI**, **microservices**, and **serverless environments**, emphasizing functional programming, modularity, performance, security, and documentation in **English**.
+
+## General Principles
+- **Response Language**: Respond in **Russian**, concisely, technically, avoiding elaboration unless requested.
+- **Functional Programming**: Use functional, declarative code; avoid classes unless justified.
+- **Modularity**: Ensure single-responsibility modules, avoid code duplication.
+- **Naming**: Use descriptive names with auxiliary verbs (e.g., `is_active`, `has_permission`).
+- **RORO Pattern**: Apply Receive an Object, Return an Object pattern.
+- **Documentation**: Use **Google-style docstrings** for all functions, methods, and components.
+- **Code Style**: Adhere to **PEP 8**, format with **Ruff**, enforce linting via pre-commit hooks.
+- **SOLID, KISS, DRY**: Follow for maintainable, simple, reusable code.
+- **Code Review**: Conduct reviews for all changes, remove unused code/comments.
+
+## Documentation Process
+- **Changelog** (`/docs/changelog.md`):
+  ```markdown
+  ## [DD-MM-YYYY] - Change Summary
+  ### Added
+  - New features
+  ### Changed
+  - Modifications
+  ### Fixed
+  - Bug fixes
+````
+
+* **Task Tracker** (`/docs/tasktracker.md`):
+
+  ```markdown
+  ## Task: [Task Name]
+  - **Status**: [Not Started/In Progress/Completed]
+  - **Description**: [Detailed description]
+  - **Steps**:
+    - [x] Completed step
+    - [ ] Current step
+    - [ ] Planned step
+  - **Dependencies**: [Related tasks]
+  ```
+* **File Headers**:
+
+  ```python
+  """
+  @file: [filename]
+  @description: [brief description]
+  @dependencies: [related components/files]
+  @created: [date]
+  """
+  ```
+* **Project Documentation** (`/docs/project.md`): Update architecture, component interactions, and **Mermaid** diagrams.
+* **API Documentation**: Maintain up-to-date API/interface docs with **FastAPI OpenAPI** or **React Storybook**.
+* **Process**:
+
+  * Document before coding new steps.
+  * Seek confirmation before significant steps.
+  * Provide summary (≤5 points) after each step.
+  * Propose 2-3 alternatives for ambiguities, explaining trade-offs.
+  * Maintain task context and project goals.
+  * Remind periodically of task status and remaining steps.
+  * Split large tasks into subtasks.
+
+## Python and FastAPI
+
+### Core Guidelines
+
+* **Python Version**: 3.10+.
+* **Asynchronous Programming**: Use `async def` for I/O-bound tasks, `def` for pure functions.
+* **Type Hints**: Mandatory type annotations with `typing`; use **Pydantic** for validation.
+* **File Structure**:
+
+  * `routers/[module]_routes.py`
+  * `models/[module]_schemas.py`
+  * `utils/[module]_utils.py`
+  * `static/` (static content)
+* **Error Handling**:
+
+  * Check edge cases first.
+  * Use early returns (`if-return`) to avoid nested conditions.
+  * Avoid unnecessary `else`.
+  * Implement custom errors and logging with `logging`.
+* **Performance**:
+
+  * Minimize blocking I/O; use async for database/external API calls.
+  * Cache static/frequent data (**Redis**, `functools.lru_cache`).
+  * Apply lazy loading for large datasets.
+
+### FastAPI-Specific Guidelines
+
+* **Routes**: Use `APIRouter` for modular, RESTful routes with explicit return types.
+* **Validation**: Use **Pydantic BaseModel** for request/response validation.
+* **Middleware**: Implement for logging, monitoring, error handling.
+* **Lifespan**: Use `lifespan` context managers instead of `@app.on_event`.
+* **Dependencies**: Leverage **FastAPI dependency injection** for state/resources.
+* **Errors**: Use `HTTPException` for expected errors, model as HTTP responses.
+* **Optimization**: Use async functions for I/O-bound tasks, caching, lazy loading.
+
+### Dependencies
+
+* **Core**: FastAPI, Pydantic v2, asyncpg/aiomysql, SQLAlchemy 2.0 (optional).
+* **Dependency Management**: Poetry/Rye.
+* **Formatting**: Ruff (replaces black, isort, flake8).
+* **Testing**: pytest, ≥90% coverage.
+* **Containerization**: Docker, docker-compose.
+* **Server**: gunicorn, uvicorn (with nginx/caddy).
+* **Process Management**: systemd, supervisor.
+
+## Microservices and Serverless
+
+### Core Guidelines
+
+* **Stateless Design**: Store state in external systems (**Redis**).
+* **API Gateway**: Integrate with Kong/AWS API Gateway for routing, rate limiting, security.
+* **Inter-Service Communication**: Use message brokers (**RabbitMQ**, **Kafka**) for event-driven architecture.
+* **Serverless**:
+
+  * Optimize for AWS Lambda/Azure Functions, minimize cold starts.
+  * Use lightweight containers or standalone binaries.
+* **Scalability**: Implement auto-scaling, load balancing (**Istio**, **Linkerd**).
+* **Monitoring**: Use **Prometheus**, **Grafana**, **OpenTelemetry** for tracing, **ELK Stack**/**AWS CloudWatch** for logging.
+* **Security**: Apply **OAuth2**, **JWT**, **CORS**, **CSP**, content validation (**OWASP Zap**).
+
+## Optimizing for Performance and Scalability
+
+* **Asynchronous Programming**: Leverage FastAPI's async capabilities to efficiently handle high volumes of simultaneous connections without blocking.
+* **High Throughput Services**: Design backend services to support high throughput and low latency. Use databases optimized for read-heavy workloads, such as Elasticsearch, to handle large-scale data efficiently.
+* **Caching Layers**: Implement caching layers (e.g., Redis, Memcached) to reduce the load on primary databases and improve API response times.
+* **Load Balancing and Service Mesh**: Apply load balancing and service mesh technologies like Istio or Linkerd to ensure efficient and fault-tolerant service-to-service communication.
+
+## Advanced Middleware and Security
+
+* **Custom Middleware**: Implement custom middleware to enable detailed logging, tracing, and monitoring of API requests, ensuring observability of service performance.
+* **Distributed Tracing**: Use OpenTelemetry or similar libraries to implement distributed tracing, enabling visibility into microservices communication.
+* **Security Best Practices**: Enforce OAuth2 authentication for secure API access, utilize rate limiting, and apply DDoS protection mechanisms.
+* **Security Headers and Validation**: Use security headers (e.g., CORS, CSP) to enhance security and apply content validation techniques with tools like OWASP Zap for proactive security checks.
+
+## Monitoring and Logging
+
+* **Monitoring with Prometheus and Grafana**: Integrate Prometheus for monitoring FastAPI applications and set up Grafana dashboards to visualize metrics. Configure alerts to ensure timely intervention when necessary.
+* **Structured Logging**: Use structured logging techniques to improve log analysis and make logs more accessible for troubleshooting and debugging.
+* **Centralized Logging**: Integrate with centralized logging systems like the ELK Stack (Elasticsearch, Logstash, Kibana) or AWS CloudWatch for aggregated logging, making it easier to trace issues across distributed systems.
+
+## Key Conventions
+
+1. **Microservices Principles**: Build scalable and maintainable services by adhering to microservices architecture principles, such as modularity, statelessness, and clear service responsibilities.
+2. **Serverless and Cloud-Native Deployments**: Focus on optimizing FastAPI applications for serverless and cloud-native environments to minimize infrastructure management and improve scalability.
+3. **Advanced Security, Monitoring, and Optimization**: Implement advanced techniques for securing APIs, ensuring high performance, and maintaining robust monitoring systems for operational excellence.
+
+For further details, refer to the official documentation of FastAPI, microservices, and serverless patterns for advanced usage and best practices.

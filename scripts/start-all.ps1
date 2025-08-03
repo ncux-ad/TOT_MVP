@@ -19,7 +19,8 @@ function Test-Services {
         @{Name="User Service"; Port=8001; URL="http://localhost:8001/health"},
         @{Name="Profile Service"; Port=8002; URL="http://localhost:8002/health"},
         @{Name="Payment Service"; Port=8005; URL="http://localhost:8005/health"},
-        @{Name="React App"; Port=3000; URL="http://localhost:3000"}
+        @{Name="Patient App"; Port=3000; URL="http://localhost:3000"},
+        @{Name="Admin Panel"; Port=3003; URL="http://localhost:3003"}
     )
     
     $runningCount = 0
@@ -46,16 +47,20 @@ if ($currentRunning -eq $totalServices) {
     Write-Host "• User Service: http://localhost:8001" -ForegroundColor White
     Write-Host "• Profile Service: http://localhost:8002" -ForegroundColor White
     Write-Host "• Payment Service: http://localhost:8005" -ForegroundColor White
-    Write-Host "• React App: http://localhost:3000" -ForegroundColor White
+    Write-Host "• Patient App: http://localhost:3000" -ForegroundColor White
+    Write-Host "• Admin Panel: http://localhost:3003" -ForegroundColor White
     Write-Host "`n📚 Swagger документация:" -ForegroundColor Cyan
     Write-Host "• API Gateway: http://localhost:8000/docs" -ForegroundColor White
+    Write-Host "`n📱 Демо аккаунты:" -ForegroundColor Cyan
+    Write-Host "• Patient App: patient@example.com / password123" -ForegroundColor White
+    Write-Host "• Admin Panel: admin@tot.ru / admin123" -ForegroundColor White
     exit 0
 }
 
 # Запускаем Backend сервисы
 Write-Host "`n🔧 Запуск Backend сервисов..." -ForegroundColor Cyan
 try {
-    & ".\scripts\start-backend-fixed.ps1"
+    & "$PSScriptRoot\start-backend-fixed.ps1"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "❌ Ошибка запуска Backend сервисов!" -ForegroundColor Red
         exit 1
@@ -69,16 +74,24 @@ try {
 Write-Host "⏳ Ожидание запуска сервисов..." -ForegroundColor Yellow
 Start-Sleep -Seconds 5
 
-# Запускаем Frontend приложение
-Write-Host "`n🎨 Запуск Frontend приложения..." -ForegroundColor Cyan
+# Запускаем Patient App
+Write-Host "`n🎨 Запуск Patient App..." -ForegroundColor Cyan
 try {
-    & ".\scripts\start-patient-app.ps1"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ Ошибка запуска Frontend приложения!" -ForegroundColor Red
-        exit 1
-    }
+    Start-Process powershell -ArgumentList "-NoExit -Command `"& '$PSScriptRoot\start-patient-app.ps1'`""
 } catch {
-    Write-Host "❌ Ошибка запуска Frontend приложения!" -ForegroundColor Red
+    Write-Host "❌ Ошибка запуска Patient App!" -ForegroundColor Red
+    exit 1
+}
+
+# Ждем немного для запуска Patient App
+Start-Sleep -Seconds 3
+
+# Запускаем Admin Panel
+Write-Host "`n🎛️ Запуск Admin Panel..." -ForegroundColor Cyan
+try {
+    Start-Process powershell -ArgumentList "-NoExit -Command `"& '$PSScriptRoot\start-admin-panel.ps1'`""
+} catch {
+    Write-Host "❌ Ошибка запуска Admin Panel!" -ForegroundColor Red
     exit 1
 }
 
@@ -97,15 +110,16 @@ if ($finalRunning -eq $finalTotal) {
     Write-Host "• User Service: http://localhost:8001" -ForegroundColor White
     Write-Host "• Profile Service: http://localhost:8002" -ForegroundColor White
     Write-Host "• Payment Service: http://localhost:8005" -ForegroundColor White
-    Write-Host "• React App: http://localhost:3000" -ForegroundColor White
+    Write-Host "• Patient App: http://localhost:3000" -ForegroundColor White
+    Write-Host "• Admin Panel: http://localhost:3003" -ForegroundColor White
     Write-Host "`n📚 Swagger документация:" -ForegroundColor Cyan
     Write-Host "• API Gateway: http://localhost:8000/docs" -ForegroundColor White
-    Write-Host "`n📱 Демо аккаунт:" -ForegroundColor Cyan
-    Write-Host "• Email: patient@example.com" -ForegroundColor White
-    Write-Host "• Пароль: password123" -ForegroundColor White
+    Write-Host "`n📱 Демо аккаунты:" -ForegroundColor Cyan
+    Write-Host "• Patient App: patient@example.com / password123" -ForegroundColor White
+    Write-Host "• Admin Panel: admin@tot.ru / admin123" -ForegroundColor White
     Write-Host "`n💡 Для остановки всех сервисов используйте: .\scripts\stop-all.ps1" -ForegroundColor Cyan
 } else {
     Write-Host "`n⚠️ Некоторые сервисы не запустились!" -ForegroundColor Yellow
     Write-Host "Запущено: $finalRunning из $finalTotal" -ForegroundColor Yellow
     Write-Host "Проверьте логи выше для диагностики проблем." -ForegroundColor Yellow
-} 
+}

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://192.168.1.107:8000',
+  baseURL: '',  // Используем относительные пути
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

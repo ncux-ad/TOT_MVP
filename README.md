@@ -6,6 +6,7 @@
 - **API Gateway** (порт 8000) - Единая точка входа
 - **User Service** (порт 8001) - Управление пользователями
 - **Profile Service** (порт 8002) - Профили пациентов/врачей/клиник
+- **Booking Service** (порт 8003) - Управление заказами вызовов врачей
 - **Payment Service** (порт 8005) - Платежи через ЮKassa и СБП
 
 ### 🎉 Frontend приложения готовы!
@@ -23,6 +24,7 @@
 | API Gateway | `http://localhost:8000` | `http://192.168.1.107:8000` |
 | User Service | `http://localhost:8001` | `http://192.168.1.107:8001` |
 | Profile Service | `http://localhost:8002` | `http://192.168.1.107:8002` |
+| Booking Service | `http://localhost:8003` | `http://192.168.1.107:8003` |
 | Payment Service | `http://localhost:8005` | `http://192.168.1.107:8005` |
 | **Patient App** | `http://localhost:3000` | `http://192.168.1.107:3000` |
 | **Admin Panel** | `http://localhost:3003` | `http://192.168.1.107:3003` |
@@ -102,6 +104,7 @@
 ### Frontend:
 - **React 18** + **TypeScript**
 - **Tailwind CSS** для стилизации
+- **Material-UI** для админ-панели
 - **React Router v6** для навигации
 - **React Query** для состояния
 - **React Hook Form** для форм
@@ -120,13 +123,14 @@ TOT_MVP/
 │   ├── api-gateway/        # API Gateway (порт 8000)
 │   ├── user-service/       # User Service (порт 8001)
 │   ├── profile-service/    # Profile Service (порт 8002)
+│   ├── booking-service/    # Booking Service (порт 8003)
 │   ├── payment-service/    # Payment Service (порт 8005)
 │   └── ...                 # Другие сервисы
 ├── frontend/               # Frontend приложения
 │   ├── patient-app/        # ✅ Patient App (порт 3000)
 │   ├── doctor-app/         # 🔄 Doctor App (планируется)
 │   ├── clinic-web/         # 🔄 Clinic Web (планируется)
-│   └── admin-panel/        # 🔄 Admin Panel (планируется)
+│   └── admin-panel/        # ✅ Admin Panel (порт 3003)
 ├── docs/                   # Документация
 ├── scripts/                # Скрипты установки
 └── README.md
@@ -140,6 +144,11 @@ TOT_MVP/
 # База данных
 DATABASE_URL=sqlite:///./tot_mvp.db
 
+# JWT
+JWT_SECRET=tot-mvp-super-secret-key-2024
+JWT_ALGORITHM=HS256
+JWT_EXPIRATION_HOURS=24
+
 # ЮKassa
 YUKASSA_SHOP_ID=your_shop_id
 YUKASSA_SECRET_KEY=your_secret_key
@@ -147,11 +156,15 @@ YUKASSA_SECRET_KEY=your_secret_key
 # СБП
 SBP_MERCHANT_ID=your_merchant_id
 SBP_PRIVATE_KEY_PATH=path/to/private.key
+
+# Frontend
+REACT_APP_API_URL=http://localhost:8000
 ```
 
 ## 📚 Документация
 
 - [📋 Архитектура](docs/ARCHITECTURE.md)
+- [🔍 Ревью проекта](docs/PROJECT_REVIEW.md)
 - [🚀 Развертывание](docs/DEPLOYMENT.md)
 - [🌐 Сетевой доступ](docs/NETWORK_ACCESS.md)
 - [🎨 Frontend](docs/FRONTEND_COMPLETE.md)
@@ -163,16 +176,19 @@ SBP_PRIVATE_KEY_PATH=path/to/private.key
 - [x] Backend микросервисы
 - [x] API Gateway
 - [x] User/Profile/Payment сервисы
+- [x] Booking Service
 - [x] Интеграция ЮKassa и СБП
 - [x] Patient App (React)
+- [x] Admin Panel (Material-UI)
 - [x] Современный UI/UX
 - [x] Адаптивный дизайн
 
 ### Phase 2: 🔄 В разработке
 - [ ] Doctor App (React)
 - [ ] Clinic Web (React)
-- [ ] Admin Panel (React)
-- [ ] Интеграция с реальными API
+- [ ] Notification Service
+- [ ] Chat Service
+- [ ] Geo Service
 
 ### Phase 3: 📋 Планируется
 - [ ] Push уведомления
@@ -182,9 +198,10 @@ SBP_PRIVATE_KEY_PATH=path/to/private.key
 
 ## 🐛 Известные проблемы
 
-- **favicon.ico 404**: Не критично, можно игнорировать
-- **Proxy ошибки**: Нормально, если backend не запущен
-- **WSL2 проблемы**: Используется локальная Windows установка
+- **Безопасность**: Хардкод секретов в коде (требует исправления)
+- **Тестирование**: Отсутствуют unit и integration тесты
+- **Типизация**: Частично отсутствует строгая типизация в TypeScript
+- **Мониторинг**: Нет структурированного логирования
 
 ## 🆘 Поддержка
 
@@ -211,6 +228,22 @@ netstat -ano | findstr ":3000"
 ### Логи
 - Backend логи выводятся в консоль
 - Frontend логи в браузере (F12)
+
+## 🎯 Демо данные
+
+### Patient App
+- **URL**: http://localhost:3000
+- **Email**: patient@example.com
+- **Пароль**: password123
+
+### Admin Panel
+- **URL**: http://localhost:3003
+- **Email**: admin@tot.ru
+- **Пароль**: admin123
+
+### API документация
+- **Swagger UI**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
 
 ---
 

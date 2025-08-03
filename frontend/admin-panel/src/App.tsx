@@ -1,61 +1,74 @@
-import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { theme } from './theme';
-
-// Layouts
-import DashboardLayout from './layouts/DashboardLayout';
-
-// Pages
-import Dashboard from './pages/Dashboard';
-import Users from './pages/Users';
-import Doctors from './pages/Doctors';
-import Clinics from './pages/Clinics';
-import Appointments from './pages/Appointments';
-import Reports from './pages/Reports';
-import Settings from './pages/Settings';
-import Login from './pages/Login';
-
-// Context
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-
-// Protected Route Component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
-};
+/**
+ * @file: App.tsx
+ * @description: Главный компонент админ-панели ТОТ
+ * @dependencies: React, Login, Users
+ * @created: 2024-01-28
+ */
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import Login from './Login';
+import Users from './Users';
+import './App.css';
 
 function App() {
+  console.log('🎬 Новая админ-панель запущена');
+  
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Проверяем токен при загрузке приложения
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (token) {
+      console.log('🔑 Найден сохранённый токен, настраиваем axios');
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setIsLoggedIn(true);
+    } else {
+      console.log('❌ Сохранённый токен не найден');
+    }
+  }, []);
+
+  const handleLoginSuccess = () => {
+    console.log('✅ Успешный вход - переключаемся на Users');
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = () => {
+    console.log('🚪 Выход - очищаем токен и возвращаемся к Login');
+    localStorage.removeItem('adminToken');
+    delete axios.defaults.headers.common['Authorization'];
+    setIsLoggedIn(false);
+  };
+
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            
-            {/* Protected Routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="users" element={<Users />} />
-              <Route path="doctors" element={<Doctors />} />
-              <Route path="clinics" element={<Clinics />} />
-              <Route path="appointments" element={<Appointments />} />
-              <Route path="reports" element={<Reports />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
-          </Routes>
-        </Router>
-      </AuthProvider>
-    </ThemeProvider>
+    <div className="App">
+      {!isLoggedIn ? (
+        <Login onLoginSuccess={handleLoginSuccess} />
+      ) : (
+        <div>
+          <div style={{ 
+            padding: '10px 20px', 
+            backgroundColor: '#f8f9fa', 
+            borderBottom: '1px solid #ddd',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
+          }}>
+            <h1>Админ-панель ТОТ</h1>
+            <button onClick={handleLogout} style={{
+              padding: '8px 16px',
+              backgroundColor: '#dc3545',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}>
+              Выйти
+            </button>
+          </div>
+          <Users />
+        </div>
+      )}
+    </div>
   );
 }
 

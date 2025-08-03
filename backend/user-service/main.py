@@ -10,8 +10,7 @@ from typing import Optional
 import logging
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Text
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 import uuid
 
 # Настройка логирования
@@ -61,8 +60,8 @@ class User(Base):
     role = Column(String, nullable=False, default="patient")  # patient, doctor, clinic, admin
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
     
     # Дополнительные поля для врачей
     specialization = Column(String, nullable=True)
@@ -137,9 +136,9 @@ def get_password_hash(password: str) -> str:
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = datetime.now() + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(hours=JWT_EXPIRATION)
+        expire = datetime.now() + timedelta(hours=JWT_EXPIRATION)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
     return encoded_jwt
@@ -391,6 +390,51 @@ async def get_user(user_id: str, db: Session = Depends(get_db)):
         created_at=user.created_at,
         updated_at=user.updated_at
     )
+
+@app.get("/users", response_model=dict)
+async def get_users(
+    page: int = 1,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    """Получение списка пользователей с пагинацией"""
+    offset = (page - 1) * limit
+    
+    # Получаем общее количество пользователей
+    total = db.query(User).count()
+    
+    # Получаем пользователей с пагинацией
+    users = db.query(User).offset(offset).limit(limit).all()
+    
+    # Преобразуем в список UserResponse
+    users_response = []
+    for user in users:
+        users_response.append(UserResponse(
+            id=user.id,
+            email=user.email,
+            phone=user.phone,
+            first_name=user.first_name,
+            last_name=user.last_name,
+            role=user.role,
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            specialization=user.specialization,
+            license_number=user.license_number,
+            experience_years=user.experience_years,
+            clinic_name=user.clinic_name,
+            clinic_address=user.clinic_address,
+            clinic_license=user.clinic_license,
+            created_at=user.created_at,
+            updated_at=user.updated_at
+        ))
+    
+    return {
+        "users": users_response,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": (total + limit - 1) // limit
+    }
 
 @app.get("/health")
 async def health_check():

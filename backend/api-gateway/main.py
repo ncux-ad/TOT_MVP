@@ -70,7 +70,7 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
         
         # Проверка срока действия токена
         exp = payload.get("exp")
-        if exp and datetime.utcnow() > datetime.fromtimestamp(exp):
+        if exp and datetime.now() > datetime.fromtimestamp(exp):
             raise HTTPException(status_code=401, detail="Token expired")
         
         return payload
@@ -98,8 +98,21 @@ async def forward_request(
     # Подготовка заголовков
     request_headers = headers or {}
     if user_token:
-        request_headers["X-User-ID"] = str(user_token.get("user_id"))
-        request_headers["X-User-Role"] = user_token.get("role", "")
+        # Для User Service передаем токен в заголовке Authorization
+        if service_name == "user":
+            # Создаем новый токен для передачи в User Service
+            token_data = {
+                "user_id": user_token.get("user_id"),
+                "email": user_token.get("email"),
+                "role": user_token.get("role")
+            }
+            import jwt
+            new_token = jwt.encode(token_data, JWT_SECRET, algorithm=JWT_ALGORITHM)
+            request_headers["Authorization"] = f"Bearer {new_token}"
+        else:
+            # Для других сервисов передаем через X-User-ID и X-User-Role
+            request_headers["X-User-ID"] = str(user_token.get("user_id"))
+            request_headers["X-User-Role"] = user_token.get("role", "")
     
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
@@ -260,6 +273,46 @@ async def send_notification(data: dict, user_token: dict = Depends(verify_token)
 async def get_notifications(user_token: dict = Depends(verify_token)):
     """Получение уведомлений пользователя"""
     return await forward_request("notification", "/notifications", "GET", user_token=user_token)
+
+# Admin routes
+@app.get("/admin/users")
+async def get_users(
+    page: int = 1,
+    limit: int = 10,
+    user_token: dict = Depends(verify_token)
+):
+    """Получение списка пользователей (только для админов)"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", f"/users?page={page}&limit={limit}", "GET", user_token=user_token)
+
+@app.get("/admin/users/{user_id}")
+async def get_user(user_id: str, user_token: dict = Depends(verify_token)):
+    """Получение информации о пользователе (только для админов)"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", f"/users/{user_id}", "GET", user_token=user_token)
+
+@app.put("/admin/users/{user_id}")
+async def update_user(user_id: str, data: dict, user_token: dict = Depends(verify_token)):
+    """Обновление пользователя (только для админов)"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", f"/users/{user_id}", "PUT", data, user_token=user_token)
+
+@app.delete("/admin/users/{user_id}")
+async def delete_user(user_id: str, user_token: dict = Depends(verify_token)):
+    """Удаление пользователя (только для админов)"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", f"/users/{user_id}", "DELETE", user_token=user_token)
+
+@app.get("/admin/me")
+async def get_admin_profile(user_token: dict = Depends(verify_token)):
+    """Получение профиля админа"""
+    if user_token.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Доступ запрещен")
+    return await forward_request("user", "/auth/me", "GET", user_token=user_token)
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { authAPI, doctorsAPI, bookingsAPI, paymentsAPI, chatAPI, emergencyAPI } from './services/api.ts';
 
 // Простые компоненты страниц
@@ -8,6 +8,7 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +21,7 @@ const LoginPage: React.FC = () => {
       
       localStorage.setItem('token', access_token);
       localStorage.setItem('user', JSON.stringify(user));
-      window.location.href = '/';
+      navigate('/');
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Ошибка входа в систему');
     } finally {
@@ -116,6 +117,7 @@ const RegisterPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,15 +139,16 @@ const RegisterPage: React.FC = () => {
       <div style={{ padding: '20px', textAlign: 'center' }}>
         <h2>Регистрация успешна!</h2>
         <p>Теперь вы можете войти в систему</p>
-        <a href="/login" style={{ 
+        <button onClick={() => navigate('/login')} style={{ 
           padding: '10px 20px', 
           backgroundColor: '#2563eb', 
           color: 'white', 
-          textDecoration: 'none', 
-          borderRadius: '4px' 
+          border: 'none',
+          borderRadius: '4px',
+          cursor: 'pointer'
         }}>
           Войти
-        </a>
+        </button>
       </div>
     );
   }

@@ -1,6 +1,6 @@
 {
-  "short_name": "ТОТ Админ",
-  "name": "ТОТ - Твоя Точка Опоры | Админ-панель",
+  "short_name": "React App",
+  "name": "Create React App Sample",
   "icons": [
     {
       "src": "favicon.ico",
