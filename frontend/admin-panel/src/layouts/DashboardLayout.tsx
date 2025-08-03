@@ -66,7 +66,7 @@ const DashboardLayout: React.FC<{ children?: React.ReactNode }> = ({ children })
     <Box sx={{ display: 'flex' }}>
       <AppBar
         position="fixed"
-        sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        sx={{ zIndex: (theme: any) => theme.zIndex.drawer + 1 }}
       >
         <Toolbar>
           <IconButton
