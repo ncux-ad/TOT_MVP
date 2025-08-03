@@ -22,6 +22,7 @@
 ### Исправлено
 - **User Service**: Исправлен порядок маршрутов - `/users/count` перемещен перед `/users/{user_id}`
 - **Profile Service**: Исправлен порядок маршрутов - `/doctor-profiles/count` и `/clinic-profiles/count` перемещены перед параметризованными маршрутами
+- **Booking Service**: Подключен к системе, исправлен порядок маршрутов - `/bookings/count` перемещен перед `/bookings/{booking_id}`
 - **API Endpoints**: Все эндпоинты статистики теперь работают корректно
 - **Документация**: Создана полная карта API эндпоинтов (`docs/API_ENDPOINTS.md`)
 - **Тестирование**: Добавлен скрипт автоматического тестирования API (`scripts/test-api-endpoints.ps1`)

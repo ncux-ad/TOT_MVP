@@ -61,7 +61,8 @@ Write-Host "`n🔍 Проверка доступности сервисов..." 
 $healthTests = @(
     @{Url="http://localhost:8000/health"; Description="API Gateway Health Check"},
     @{Url="http://localhost:8001/health"; Description="User Service Health Check"},
-    @{Url="http://localhost:8002/health"; Description="Profile Service Health Check"}
+    @{Url="http://localhost:8002/health"; Description="Profile Service Health Check"},
+    @{Url="http://localhost:8003/health"; Description="Booking Service Health Check"}
 )
 
 $healthResults = @()
@@ -76,7 +77,8 @@ Write-Host "`n📊 Тестирование эндпоинтов статист�
 $statsTests = @(
     @{Url="http://localhost:8001/users/count"; Description="User Service - количество пользователей"},
     @{Url="http://localhost:8002/doctor-profiles/count"; Description="Profile Service - количество врачей"},
-    @{Url="http://localhost:8002/clinic-profiles/count"; Description="Profile Service - количество клиник"}
+    @{Url="http://localhost:8002/clinic-profiles/count"; Description="Profile Service - количество клиник"},
+    @{Url="http://localhost:8003/bookings/count"; Description="Booking Service - количество заказов"}
 )
 
 $statsResults = @()

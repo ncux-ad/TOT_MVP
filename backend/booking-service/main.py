@@ -33,8 +33,8 @@ app.add_middleware(
 )
 
 # База данных
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://tot_user:tot_password@localhost:5432/tot_mvp")
-engine = create_engine(DATABASE_URL)
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./tot_mvp.db")
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
@@ -262,6 +262,12 @@ async def create_booking(
         is_emergency=booking.is_emergency,
         emergency_type=booking.emergency_type
     )
+
+@app.get("/bookings/count")
+async def get_bookings_count(db: Session = Depends(get_db)):
+    """Получение количества заказов (без аутентификации для статистики)"""
+    count = db.query(Booking).count()
+    return {"count": count}
 
 @app.get("/bookings/{booking_id}", response_model=BookingResponse)
 async def get_booking(
@@ -699,6 +705,9 @@ async def health_check():
     }
 
 if __name__ == "__main__":
+    # Создаем таблицы
+    Base.metadata.create_all(bind=engine)
+    
     import uvicorn
     uvicorn.run(
         app,

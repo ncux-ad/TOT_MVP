@@ -34,6 +34,7 @@ $services = @(
     @{Name="API Gateway"; Script="backend\api-gateway\main.py"; Port=8000},
     @{Name="User Service"; Script="backend\user-service\main.py"; Port=8001},
     @{Name="Profile Service"; Script="backend\profile-service\main.py"; Port=8002},
+    @{Name="Booking Service"; Script="backend\booking-service\main.py"; Port=8003},
     @{Name="Payment Service"; Script="backend\payment-service\main.py"; Port=8005}
 )
 
@@ -61,6 +62,7 @@ Write-Host "`n🌐 Доступные endpoints:" -ForegroundColor Cyan
 Write-Host "• API Gateway: http://localhost:8000" -ForegroundColor White
 Write-Host "• User Service: http://localhost:8001" -ForegroundColor White
 Write-Host "• Profile Service: http://localhost:8002" -ForegroundColor White
+Write-Host "• Booking Service: http://localhost:8003" -ForegroundColor White
 Write-Host "• Payment Service: http://localhost:8005" -ForegroundColor White
 Write-Host "`n📚 Swagger документация:" -ForegroundColor Cyan
 Write-Host "• API Gateway: http://localhost:8000/docs" -ForegroundColor White

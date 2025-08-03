@@ -470,12 +470,16 @@ async def api_get_dashboard_stats(user_token: dict = Depends(verify_token)):
         total_doctors = doctors_response.get("data", {}).get("count", 0) if doctors_response.get("status_code") == 200 else 0
         total_clinics = clinics_response.get("data", {}).get("count", 0) if clinics_response.get("status_code") == 200 else 0
         
+        # Получаем статистику от Booking Service
+        bookings_response = await forward_request("booking", "/bookings/count", "GET", user_token=user_token)
+        total_appointments = bookings_response.get("data", {}).get("count", 0) if bookings_response.get("status_code") == 200 else 0
+        
         return {
             "total_users": total_users,
             "total_doctors": total_doctors,
             "total_clinics": total_clinics,
-            "total_appointments": 0,  # Пока нет Booking Service
-            "active_appointments": 0,
+            "total_appointments": total_appointments,
+            "active_appointments": 0,  # TODO: Добавить фильтрацию по статусу
             "pending_appointments": 0,
             "completed_appointments": 0
         }
