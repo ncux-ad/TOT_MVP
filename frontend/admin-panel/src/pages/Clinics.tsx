@@ -33,6 +33,7 @@ import {
 } from '@mui/icons-material';
 import Modal from '../components/Modal';
 import ClinicForm from '../components/ClinicForm';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 interface Clinic {
   id: string;
@@ -58,6 +59,11 @@ const Clinics: React.FC = () => {
   const [selectedClinic, setSelectedClinic] = useState<Clinic | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  
+  // Диалог подтверждения удаления
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [clinicToDelete, setClinicToDelete] = useState<Clinic | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     console.log('🔄 useEffect: загружаем клиники');
@@ -176,8 +182,33 @@ const Clinics: React.FC = () => {
   };
 
   const handleDeleteClinic = (clinic: Clinic) => {
-    console.log('🗑️ Удаление клиники:', clinic.id);
-    // TODO: Реализовать подтверждение удаления
+    console.log('🗑️ Открываем диалог удаления клиники:', clinic.id);
+    setClinicToDelete(clinic);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!clinicToDelete) return;
+    
+    setDeleteLoading(true);
+    try {
+      console.log('🗑️ Удаляем клинику:', clinicToDelete.id);
+      
+      // TODO: Заменить на реальный API запрос
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация запроса
+      
+      console.log('✅ Клиника успешно удалена');
+      
+      // Обновляем список
+      setClinics(prev => prev.filter(clinic => clinic.id !== clinicToDelete.id));
+      
+    } catch (err: any) {
+      console.error('❌ Ошибка удаления клиники:', err);
+      setError('Ошибка удаления клиники');
+    } finally {
+      setDeleteLoading(false);
+      setClinicToDelete(null);
+    }
   };
 
   const handleViewClinic = (clinic: Clinic) => {
@@ -350,10 +381,25 @@ const Clinics: React.FC = () => {
           onCancel={handleCloseModal}
           loading={formLoading}
           error={formError}
-        />
-      </Modal>
-    </Box>
-  );
-};
+                 />
+       </Modal>
+
+       {/* Диалог подтверждения удаления */}
+       <ConfirmDialog
+         open={deleteDialogOpen}
+         onClose={() => {
+           setDeleteDialogOpen(false);
+           setClinicToDelete(null);
+         }}
+         onConfirm={handleConfirmDelete}
+         title="Подтверждение удаления"
+         message={`Вы действительно хотите удалить клинику "${clinicToDelete?.name}"?`}
+         confirmText="Удалить клинику"
+         loading={deleteLoading}
+         severity="error"
+       />
+     </Box>
+   );
+ };
 
 export default Clinics; 

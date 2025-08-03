@@ -32,6 +32,7 @@ import {
 } from '@mui/icons-material';
 import Modal from '../components/Modal';
 import DoctorForm from '../components/DoctorForm';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 interface Doctor {
   id: string;
@@ -57,6 +58,11 @@ const Doctors: React.FC = () => {
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  
+  // Диалог подтверждения удаления
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [doctorToDelete, setDoctorToDelete] = useState<Doctor | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
 
   useEffect(() => {
@@ -154,8 +160,33 @@ const Doctors: React.FC = () => {
   };
 
   const handleDeleteDoctor = (doctor: Doctor) => {
-    console.log('🗑️ Удаление врача:', doctor.id);
-    // TODO: Реализовать подтверждение удаления
+    console.log('🗑️ Открываем диалог удаления врача:', doctor.id);
+    setDoctorToDelete(doctor);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!doctorToDelete) return;
+    
+    setDeleteLoading(true);
+    try {
+      console.log('🗑️ Удаляем врача:', doctorToDelete.id);
+      
+      // TODO: Заменить на реальный API запрос
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация запроса
+      
+      console.log('✅ Врач успешно удален');
+      
+      // Обновляем список
+      setDoctors(prev => prev.filter(doctor => doctor.id !== doctorToDelete.id));
+      
+    } catch (err: any) {
+      console.error('❌ Ошибка удаления врача:', err);
+      setError('Ошибка удаления врача');
+    } finally {
+      setDeleteLoading(false);
+      setDoctorToDelete(null);
+    }
   };
 
   const handleViewDoctor = (doctor: Doctor) => {
@@ -323,10 +354,25 @@ const Doctors: React.FC = () => {
           onCancel={handleCloseModal}
           loading={formLoading}
           error={formError}
-        />
-      </Modal>
-    </Box>
-  );
-};
+                 />
+       </Modal>
+
+       {/* Диалог подтверждения удаления */}
+       <ConfirmDialog
+         open={deleteDialogOpen}
+         onClose={() => {
+           setDeleteDialogOpen(false);
+           setDoctorToDelete(null);
+         }}
+         onConfirm={handleConfirmDelete}
+         title="Подтверждение удаления"
+         message={`Вы действительно хотите удалить врача "${doctorToDelete?.first_name} ${doctorToDelete?.last_name}"?`}
+         confirmText="Удалить врача"
+         loading={deleteLoading}
+         severity="error"
+       />
+     </Box>
+   );
+ };
 
 export default Doctors; 

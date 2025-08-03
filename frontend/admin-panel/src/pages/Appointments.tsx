@@ -29,13 +29,13 @@ import {
   Delete as DeleteIcon,
   Visibility as ViewIcon,
   Add as AddIcon,
-  Event as AppointmentIcon,
   CheckCircle as ConfirmedIcon,
   Cancel as CancelledIcon,
   Schedule as PendingIcon
 } from '@mui/icons-material';
 import Modal from '../components/Modal';
 import AppointmentForm from '../components/AppointmentForm';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 interface Appointment {
   id: string;
@@ -62,6 +62,11 @@ const Appointments: React.FC = () => {
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  
+  // Диалог подтверждения удаления
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     console.log('🔄 useEffect: загружаем записи');
@@ -220,8 +225,33 @@ const Appointments: React.FC = () => {
   };
 
   const handleDeleteAppointment = (appointment: Appointment) => {
-    console.log('🗑️ Удаление записи:', appointment.id);
-    // TODO: Реализовать подтверждение удаления
+    console.log('🗑️ Открываем диалог удаления записи:', appointment.id);
+    setAppointmentToDelete(appointment);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!appointmentToDelete) return;
+    
+    setDeleteLoading(true);
+    try {
+      console.log('🗑️ Удаляем запись:', appointmentToDelete.id);
+      
+      // TODO: Заменить на реальный API запрос
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Имитация запроса
+      
+      console.log('✅ Запись успешно удалена');
+      
+      // Обновляем список
+      setAppointments(prev => prev.filter(appointment => appointment.id !== appointmentToDelete.id));
+      
+    } catch (err: any) {
+      console.error('❌ Ошибка удаления записи:', err);
+      setError('Ошибка удаления записи');
+    } finally {
+      setDeleteLoading(false);
+      setAppointmentToDelete(null);
+    }
   };
 
   const handleViewAppointment = (appointment: Appointment) => {
@@ -400,10 +430,25 @@ const Appointments: React.FC = () => {
           onCancel={handleCloseModal}
           loading={formLoading}
           error={formError}
-        />
-      </Modal>
-    </Box>
-  );
-};
+                 />
+       </Modal>
+
+       {/* Диалог подтверждения удаления */}
+       <ConfirmDialog
+         open={deleteDialogOpen}
+         onClose={() => {
+           setDeleteDialogOpen(false);
+           setAppointmentToDelete(null);
+         }}
+         onConfirm={handleConfirmDelete}
+         title="Подтверждение удаления"
+         message={`Вы действительно хотите удалить запись на приём для "${appointmentToDelete?.patient_name}"?`}
+         confirmText="Удалить запись"
+         loading={deleteLoading}
+         severity="error"
+       />
+     </Box>
+   );
+ };
 
 export default Appointments; 
