@@ -5,7 +5,7 @@
  * @created: 2024-01-28
  */
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { api } from './utils/api';
 import {
   AppBar,
   Toolbar,
@@ -24,7 +24,7 @@ import {
   Menu as MenuIcon
 } from '@mui/icons-material';
 import Login from './Login';
-import Users from './Users';
+import Users from './pages/Users';
 import Dashboard from './pages/Dashboard';
 import Doctors from './pages/Doctors';
 import Clinics from './pages/Clinics';
@@ -55,8 +55,7 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     if (token) {
-      console.log('🔑 Найден сохранённый токен, настраиваем axios');
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      console.log('🔑 Найден сохранённый токен, токен будет добавляться автоматически');
       setIsLoggedIn(true);
     } else {
       console.log('❌ Сохранённый токен не найден');
@@ -72,7 +71,6 @@ function App() {
   const handleLogout = () => {
     console.log('🚪 Выход - очищаем токен и возвращаемся к Login');
     localStorage.removeItem('adminToken');
-    delete axios.defaults.headers.common['Authorization'];
     setIsLoggedIn(false);
     setCurrentPage('dashboard');
   };

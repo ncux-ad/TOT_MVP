@@ -5,7 +5,7 @@
  * @created: 2024-01-28
  */
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { usersAPI } from '../utils/api';
 import {
   Box,
   Typography,
@@ -57,6 +57,17 @@ const Users: React.FC = () => {
 
   useEffect(() => {
     console.log('🔄 useEffect: загружаем пользователей');
+    
+    // Проверяем токен перед загрузкой
+    const token = localStorage.getItem('adminToken');
+    console.log('🔑 Токен в localStorage:', token ? token.substring(0, 20) + '...' : 'НЕТ');
+    
+    if (!token) {
+      console.log('⚠️ Токен не найден, перенаправляем на логин');
+      window.location.href = '/login';
+      return;
+    }
+    
     fetchUsers();
   }, []);
 
@@ -66,9 +77,16 @@ const Users: React.FC = () => {
     try {
       console.log('🔍 Запрос списка пользователей...');
       
-      const response = await axios.get('/admin/users?page=1&limit=100');
+      console.log('🔍 Вызываем usersAPI.getUsers...');
+      const response = await usersAPI.getUsers({ page: 1, limit: 100 });
+      console.log('📡 Получен ответ:', response);
+      console.log('📊 response.data:', response.data);
+      
       const responseData = response.data.data || response.data;
+      console.log('📊 responseData:', responseData);
+      
       const usersList = responseData.users || [];
+      console.log('👥 usersList:', usersList);
       
       setUsers(usersList);
       console.log('👥 Список пользователей:', usersList);

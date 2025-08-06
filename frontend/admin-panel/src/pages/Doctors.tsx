@@ -5,7 +5,7 @@
  * @created: 2024-01-28
  */
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { usersAPI } from '../utils/api';
 import {
   Box,
   Typography,
@@ -75,7 +75,7 @@ const Doctors: React.FC = () => {
     setError(null);
     try {
       console.log('🔍 Запрос списка врачей...');
-      const response = await axios.get('/admin/users?page=1&limit=100');
+      const response = await usersAPI.getUsers({ page: 1, limit: 100 });
       const responseData = response.data.data || response.data;
       
       if (responseData && Array.isArray(responseData.users)) {

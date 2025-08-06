@@ -5,7 +5,7 @@
  * @created: 2024-01-28
  */
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { usersAPI } from '../utils/api';
 import {
   Box,
   Typography,
@@ -52,14 +52,16 @@ const Dashboard: React.FC = () => {
       console.log('📊 Загружаем статистику дашборда...');
       
       // Загружаем пользователей для подсчёта статистики
-      const usersResponse = await axios.get('/admin/users?page=1&limit=100');
-      const usersData = usersResponse.data.data || usersResponse.data;
-      const users = usersData.users || [];
+      const usersResponse = await usersAPI.getUsers({ page: 1, limit: 100 });
+      console.log('📊 Ответ от API:', usersResponse);
+      
+      const usersData = usersResponse.data?.users || [];
+      console.log('📊 Данные пользователей:', usersData);
       
       // Подсчитываем статистику по ролям
       const statsData = {
-        users: users.length,
-        doctors: users.filter((user: any) => user.role === 'doctor').length,
+        users: usersData.length,
+        doctors: usersData.filter((user: any) => user.role === 'doctor').length,
         clinics: 2, // Пока используем моковые данные
         appointments: 3 // Пока используем моковые данные
       };
@@ -68,6 +70,7 @@ const Dashboard: React.FC = () => {
       setStats(statsData);
     } catch (err: any) {
       console.error('❌ Ошибка загрузки статистики:', err);
+      console.error('❌ Детали ошибки:', err.response?.data);
       setError('Не удалось загрузить статистику');
     } finally {
       setLoading(false);

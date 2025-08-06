@@ -97,45 +97,55 @@ async def forward_request(
     
     # Подготовка заголовков
     request_headers = headers or {}
-    if user_token:
-        # Для User Service передаем токен в заголовке Authorization
-        if service_name == "user":
-            # Создаем новый токен для передачи в User Service
-            token_data = {
-                "user_id": user_token.get("user_id"),
-                "email": user_token.get("email"),
-                "role": user_token.get("role")
-            }
-            import jwt
-            new_token = jwt.encode(token_data, JWT_SECRET, algorithm=JWT_ALGORITHM)
-            request_headers["Authorization"] = f"Bearer {new_token}"
-        else:
-            # Для других сервисов передаем через X-User-ID и X-User-Role
-            request_headers["X-User-ID"] = str(user_token.get("user_id"))
-            request_headers["X-User-Role"] = user_token.get("role", "")
+    
+    # Для User Service не передаем токен для аутентификации
+    # User Service сам обрабатывает аутентификацию
+    if user_token and service_name != "user":
+        # Для других сервисов передаем через X-User-ID и X-User-Role
+        request_headers["X-User-ID"] = str(user_token.get("user_id"))
+        request_headers["X-User-Role"] = user_token.get("role", "")
     
     try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            if method.upper() == "GET":
-                response = await client.get(url, headers=request_headers)
-            elif method.upper() == "POST":
-                response = await client.post(url, json=data, headers=request_headers)
-            elif method.upper() == "PUT":
-                response = await client.put(url, json=data, headers=request_headers)
-            elif method.upper() == "DELETE":
-                response = await client.delete(url, headers=request_headers)
-            else:
-                raise HTTPException(status_code=405, detail="Method not allowed")
+        logger.info(f"Forwarding request to {service_name}: {url}")
+        logger.info(f"Method: {method}, Headers: {request_headers}")
+        if data:
+            logger.info(f"Data: {data}")
             
-            return {
-                "status_code": response.status_code,
-                "data": response.json() if response.headers.get("content-type", "").startswith("application/json") else response.text
-            }
-    except httpx.RequestError as e:
+        # Используем синхронные запросы для совместимости
+        import requests
+        
+        if method.upper() == "GET":
+            response = requests.get(url, headers=request_headers, timeout=30.0, verify=False)
+        elif method.upper() == "POST":
+            response = requests.post(url, json=data, headers=request_headers, timeout=30.0, verify=False)
+        elif method.upper() == "PUT":
+            response = requests.put(url, json=data, headers=request_headers, timeout=30.0, verify=False)
+        elif method.upper() == "DELETE":
+            response = requests.delete(url, headers=request_headers, timeout=30.0, verify=False)
+        else:
+            raise HTTPException(status_code=405, detail="Method not allowed")
+        
+        logger.info(f"Response status: {response.status_code}")
+        logger.info(f"Response headers: {dict(response.headers)}")
+        logger.info(f"Response text: {response.text[:200]}...")
+        
+        # Возвращаем данные напрямую, без обертки
+        if response.headers.get("content-type", "").startswith("application/json"):
+            return response.json()
+        else:
+            return {"message": response.text}
+    except requests.RequestException as e:
         logger.error(f"Request error to {service_name}: {e}")
+        logger.error(f"URL: {url}")
         raise HTTPException(status_code=503, detail=f"Service {service_name} unavailable")
+    except requests.HTTPError as e:
+        logger.error(f"HTTP error from {service_name}: {e.response.status_code}")
+        logger.error(f"URL: {url}")
+        # Возвращаем оригинальный статус и данные от сервиса
+        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
     except Exception as e:
         logger.error(f"Unexpected error forwarding to {service_name}: {e}")
+        logger.error(f"URL: {url}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 # Health check
@@ -147,6 +157,41 @@ async def health_check():
         "timestamp": datetime.utcnow().isoformat(),
         "service": "api-gateway"
     }
+
+@app.get("/test-connection")
+async def test_connection():
+    """Тест подключения к User Service"""
+    try:
+        import requests
+        response = requests.get("http://localhost:8001/health", timeout=5.0, verify=False)
+        return {
+            "status": "success",
+            "user_service_status": response.status_code,
+            "user_service_response": response.text
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
+
+@app.get("/test-auth")
+async def test_auth():
+    """Тест авторизации через User Service"""
+    try:
+        import requests
+        data = {"email": "admin@tot.ru", "password": "admin123"}
+        response = requests.post("http://localhost:8001/auth/login", json=data, timeout=5.0, verify=False)
+        return {
+            "status": "success",
+            "status_code": response.status_code,
+            "response": response.text[:200] + "..." if len(response.text) > 200 else response.text
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "error": str(e)
+        }
 
 # User Service routes
 @app.post("/auth/register")
@@ -163,6 +208,56 @@ async def login_user(data: dict):
 async def get_current_user(user_token: dict = Depends(verify_token)):
     """Получение информации о текущем пользователе"""
     return await forward_request("user", "/auth/me", "GET", user_token=user_token)
+
+# Унифицированные эндпоинты для пользователей (API v1)
+@app.get("/api/v1/users")
+async def get_users(
+    page: int = 1,
+    limit: int = 10,
+    user_token: dict = Depends(verify_token)
+):
+    """Получение списка пользователей"""
+    return await forward_request("user", f"/users?page={page}&limit={limit}", "GET", user_token=user_token)
+
+@app.get("/api/v1/users/{user_id}")
+async def get_user(user_id: str, user_token: dict = Depends(verify_token)):
+    """Получение информации о пользователе"""
+    return await forward_request("user", f"/users/{user_id}", "GET", user_token=user_token)
+
+@app.post("/api/v1/users")
+async def create_user(data: dict, user_token: dict = Depends(verify_token)):
+    """Создание пользователя"""
+    return await forward_request("user", "/auth/register", "POST", data, user_token=user_token)
+
+@app.put("/api/v1/users/{user_id}")
+async def update_user(user_id: str, data: dict, user_token: dict = Depends(verify_token)):
+    """Обновление пользователя"""
+    return await forward_request("user", f"/users/{user_id}", "PUT", data, user_token=user_token)
+
+@app.delete("/api/v1/users/{user_id}")
+async def delete_user(user_id: str, user_token: dict = Depends(verify_token)):
+    """Удаление пользователя"""
+    return await forward_request("user", f"/users/{user_id}", "DELETE", user_token=user_token)
+
+@app.get("/users/{user_id}")
+async def get_user(user_id: str, user_token: dict = Depends(verify_token)):
+    """Получение информации о пользователе"""
+    return await forward_request("user", f"/users/{user_id}", "GET", user_token=user_token)
+
+@app.post("/users")
+async def create_user(data: dict, user_token: dict = Depends(verify_token)):
+    """Создание пользователя"""
+    return await forward_request("user", "/auth/register", "POST", data, user_token=user_token)
+
+@app.put("/users/{user_id}")
+async def update_user(user_id: str, data: dict, user_token: dict = Depends(verify_token)):
+    """Обновление пользователя"""
+    return await forward_request("user", f"/users/{user_id}", "PUT", data, user_token=user_token)
+
+@app.delete("/users/{user_id}")
+async def delete_user(user_id: str, user_token: dict = Depends(verify_token)):
+    """Удаление пользователя"""
+    return await forward_request("user", f"/users/{user_id}", "DELETE", user_token=user_token)
 
 # Profile Service routes
 @app.get("/profiles/{user_id}")

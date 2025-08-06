@@ -5,7 +5,7 @@
  * @created: 2024-01-28
  */
 import React, { useState } from 'react';
-import axios from 'axios';
+import { authAPI } from './utils/api';
 import {
   Box,
   Paper,
@@ -42,10 +42,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     try {
       console.log('🚀 Попытка входа:', { email });
       
-      const response = await axios.post('/auth/login', {
-        email,
-        password
-      });
+      const response = await authAPI.login(email, password);
       
       console.log('✅ Успешный вход:', response.data);
       
@@ -57,13 +54,17 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         console.log('🔑 Сохраняем токен:', token.substring(0, 20) + '...');
         localStorage.setItem('adminToken', token);
         
-        // Настраиваем axios для автоматической отправки токена
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        // Проверяем, что токен сохранился
+        const savedToken = localStorage.getItem('adminToken');
+        console.log('🔑 Проверяем сохраненный токен:', savedToken ? savedToken.substring(0, 20) + '...' : 'НЕТ');
+        
+        // Токен будет автоматически добавляться через интерцептор
         
         setMessage('Успешный вход! Переходим к списку пользователей...');
         
         // Переходим к главной странице через 1 секунду
         setTimeout(() => {
+          console.log('🚀 Переходим к главной странице...');
           onLoginSuccess();
         }, 1000);
       } else {
