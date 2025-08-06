@@ -1,260 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { authAPI, doctorsAPI, bookingsAPI, paymentsAPI, chatAPI, emergencyAPI } from './services/api.ts';
+import RegisterPage from './pages/RegisterPage';
+import LoginPage from './pages/LoginPage';
+import { AuthProvider } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Простые компоненты страниц
-const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
-
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await authAPI.login(email, password);
-      const { access_token, user } = response.data;
-      
-      localStorage.setItem('token', access_token);
-      localStorage.setItem('user', JSON.stringify(user));
-      navigate('/');
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка входа в систему');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div style={{ 
-      padding: '20px', 
-      textAlign: 'center',
-      maxWidth: '400px',
-      margin: '50px auto',
-      backgroundColor: 'white',
-      borderRadius: '8px',
-      boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-    }}>
-      <h2>Вход в систему</h2>
-      {error && (
-        <div style={{ 
-          backgroundColor: '#fef2f2', 
-          color: '#ef4444', 
-          padding: '10px', 
-          borderRadius: '4px', 
-          marginBottom: '15px' 
-        }}>
-          {error}
-        </div>
-      )}
-      <form onSubmit={handleLogin} style={{ textAlign: 'left' }}>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '4px'
-            }}
-            placeholder="patient@example.com"
-            disabled={loading}
-          />
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Пароль:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '4px'
-            }}
-            placeholder="password123"
-            disabled={loading}
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: '10px',
-            backgroundColor: loading ? '#9ca3af' : '#2563eb',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {loading ? 'Вход...' : 'Войти'}
-        </button>
-      </form>
-      <p style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>
-        Демо данные: patient@example.com / password123
-      </p>
-    </div>
-  );
-};
-
-const RegisterPage: React.FC = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    phone: ''
-  });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
-  const navigate = useNavigate();
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      await authAPI.register(formData);
-      setSuccess(true);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Ошибка регистрации');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (success) {
-    return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <h2>Регистрация успешна!</h2>
-        <p>Теперь вы можете войти в систему</p>
-        <button onClick={() => navigate('/login')} style={{ 
-          padding: '10px 20px', 
-          backgroundColor: '#2563eb', 
-          color: 'white', 
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}>
-          Войти
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ padding: '20px', textAlign: 'center', maxWidth: '400px', margin: '0 auto' }}>
-      <h2>Регистрация</h2>
-      {error && (
-        <div style={{ 
-          backgroundColor: '#fef2f2', 
-          color: '#ef4444', 
-          padding: '10px', 
-          borderRadius: '4px', 
-          marginBottom: '15px' 
-        }}>
-          {error}
-        </div>
-      )}
-      <form onSubmit={handleSubmit} style={{ textAlign: 'left' }}>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Имя:</label>
-          <input
-            type="text"
-            value={formData.name}
-            onChange={(e) => setFormData({...formData, name: e.target.value})}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '4px'
-            }}
-            placeholder="Иван Иванов"
-            disabled={loading}
-            required
-          />
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Email:</label>
-          <input
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '4px'
-            }}
-            placeholder="patient@example.com"
-            disabled={loading}
-            required
-          />
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Пароль:</label>
-          <input
-            type="password"
-            value={formData.password}
-            onChange={(e) => setFormData({...formData, password: e.target.value})}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '4px'
-            }}
-            placeholder="password123"
-            disabled={loading}
-            required
-          />
-        </div>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Телефон:</label>
-          <input
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData({...formData, phone: e.target.value})}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '4px'
-            }}
-            placeholder="+7 (999) 123-45-67"
-            disabled={loading}
-          />
-        </div>
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: '10px',
-            backgroundColor: loading ? '#9ca3af' : '#2563eb',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer'
-          }}
-        >
-          {loading ? 'Регистрация...' : 'Зарегистрироваться'}
-        </button>
-      </form>
-    </div>
-  );
-};
-
 const HomePage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -988,88 +740,93 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route
-          path="/login"
-          element={
-            <PublicRoute>
-              <LoginPage />
-            </PublicRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicRoute>
-              <RegisterPage />
-            </PublicRoute>
-          }
-        />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <LoginPage />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicRoute>
+                  <RegisterPage />
+                </PublicRoute>
+              }
+            />
 
-        {/* Protected Routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <HomePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfilePage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/doctors"
-          element={
-            <ProtectedRoute>
-              <DoctorsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/bookings"
-          element={
-            <ProtectedRoute>
-              <BookingsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/payments"
-          element={
-            <ProtectedRoute>
-              <PaymentsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/chat"
-          element={
-            <ProtectedRoute>
-              <ChatPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/emergency"
-          element={
-            <ProtectedRoute>
-              <EmergencyPage />
-            </ProtectedRoute>
-          }
-        />
 
-        {/* Default redirect */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Router>
+            {/* Protected Routes */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <HomePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/doctors"
+              element={
+                <ProtectedRoute>
+                  <DoctorsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/bookings"
+              element={
+                <ProtectedRoute>
+                  <BookingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/payments"
+              element={
+                <ProtectedRoute>
+                  <PaymentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <ChatPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/emergency"
+              element={
+                <ProtectedRoute>
+                  <EmergencyPage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Default redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 

@@ -8,6 +8,16 @@ interface User {
   last_name: string;
   role: string;
   phone?: string;
+  specialization?: string;
+  license_number?: string;
+  experience_years?: number;
+  clinic_name?: string;
+  clinic_address?: string;
+  clinic_license?: string;
+  is_active?: boolean;
+  is_verified?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AuthContextType {
@@ -26,6 +36,12 @@ interface RegisterData {
   last_name: string;
   role: string;
   phone?: string;
+  specialization?: string;
+  license_number?: string;
+  experience_years?: number;
+  clinic_name?: string;
+  clinic_address?: string;
+  clinic_license?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);

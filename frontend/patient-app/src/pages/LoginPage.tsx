@@ -1,37 +1,29 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
-import { Eye, EyeOff, Mail, Lock, User, Sun, Moon } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, Sun, Moon } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-interface LoginForm {
-  email: string;
-  password: string;
-}
-
 const LoginPage: React.FC = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginForm>();
-
-  const onSubmit = async (data: LoginForm) => {
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
+
     try {
-      await login(data.email, data.password);
-      toast.success('Успешный вход в систему!');
+      await login(email, password);
+      toast.success('Вход выполнен успешно!');
       navigate('/');
-    } catch (error) {
-      toast.error('Ошибка входа. Проверьте email и пароль.');
+    } catch (error: any) {
+      toast.error(error.message || 'Ошибка входа в систему');
     } finally {
       setIsLoading(false);
     }
@@ -48,7 +40,7 @@ const LoginPage: React.FC = () => {
             </div>
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">
-            ТОТ - Твоя Точка Опоры
+            Вход в систему
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Войдите в свою учетную запись
@@ -66,11 +58,11 @@ const LoginPage: React.FC = () => {
         </div>
 
         {/* Login form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="space-y-4">
             {/* Email field */}
             <div>
-              <label htmlFor="email" className="label">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Email
               </label>
               <div className="relative">
@@ -80,25 +72,19 @@ const LoginPage: React.FC = () => {
                 <input
                   id="email"
                   type="email"
-                  {...register('email', {
-                    required: 'Email обязателен',
-                    pattern: {
-                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                      message: 'Неверный формат email',
-                    },
-                  })}
-                  className="input pl-10"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="Введите ваш email"
+                  disabled={isLoading}
+                  required
                 />
               </div>
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
-              )}
             </div>
 
             {/* Password field */}
             <div>
-              <label htmlFor="password" className="label">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Пароль
               </label>
               <div className="relative">
@@ -108,15 +94,12 @@ const LoginPage: React.FC = () => {
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  {...register('password', {
-                    required: 'Пароль обязателен',
-                    minLength: {
-                      value: 6,
-                      message: 'Пароль должен содержать минимум 6 символов',
-                    },
-                  })}
-                  className="input pl-10 pr-10"
-                  placeholder="Введите ваш пароль"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  placeholder="Введите пароль"
+                  disabled={isLoading}
+                  required
                 />
                 <button
                   type="button"
@@ -130,9 +113,6 @@ const LoginPage: React.FC = () => {
                   )}
                 </button>
               </div>
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-              )}
             </div>
           </div>
 
@@ -141,7 +121,7 @@ const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="btn btn-primary w-full flex justify-center items-center"
+              className="w-full flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -149,6 +129,13 @@ const LoginPage: React.FC = () => {
                 'Войти'
               )}
             </button>
+          </div>
+
+          {/* Demo credentials */}
+          <div className="text-center">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Демо данные: patient@example.com / password123
+            </p>
           </div>
 
           {/* Register link */}
@@ -164,17 +151,6 @@ const LoginPage: React.FC = () => {
             </p>
           </div>
         </form>
-
-        {/* Demo credentials */}
-        <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-          <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-            Демо аккаунт для тестирования:
-          </h3>
-          <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-            <p>Email: patient@example.com</p>
-            <p>Пароль: password123</p>
-          </div>
-        </div>
       </div>
     </div>
   );

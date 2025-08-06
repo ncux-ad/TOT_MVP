@@ -8,7 +8,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 import logging
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator, Field
 from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, Text
 from sqlalchemy.orm import declarative_base, sessionmaker
 import uuid
@@ -80,20 +80,43 @@ Base.metadata.create_all(bind=engine)
 class UserCreate(BaseModel):
     email: EmailStr
     phone: Optional[str] = None
-    password: str
-    first_name: str
-    last_name: str
-    role: str = "patient"
-    specialization: Optional[str] = None
-    license_number: Optional[str] = None
-    experience_years: Optional[int] = None
-    clinic_name: Optional[str] = None
-    clinic_address: Optional[str] = None
-    clinic_license: Optional[str] = None
+    password: str = Field(..., min_length=6, description="Пароль должен содержать минимум 6 символов")
+    first_name: str = Field(..., min_length=2, max_length=50, description="Имя должно содержать от 2 до 50 символов")
+    last_name: str = Field(..., min_length=2, max_length=50, description="Фамилия должна содержать от 2 до 50 символов")
+    role: str = Field(default="patient", pattern="^(patient|doctor|clinic|admin)$", description="Роль должна быть: patient, doctor, clinic или admin")
+    specialization: Optional[str] = Field(None, max_length=100, description="Специализация врача")
+    license_number: Optional[str] = Field(None, max_length=50, description="Номер лицензии")
+    experience_years: Optional[int] = Field(None, ge=0, le=50, description="Опыт работы в годах")
+    clinic_name: Optional[str] = Field(None, max_length=200, description="Название клиники")
+    clinic_address: Optional[str] = Field(None, max_length=500, description="Адрес клиники")
+    clinic_license: Optional[str] = Field(None, max_length=50, description="Лицензия клиники")
+    
+    @validator('phone')
+    def validate_phone(cls, v):
+        if v is not None:
+            # Простая валидация телефона (можно улучшить)
+            if not v.startswith('+7') and not v.startswith('8'):
+                raise ValueError('Телефон должен начинаться с +7 или 8')
+            if len(v) < 10:
+                raise ValueError('Телефон должен содержать минимум 10 цифр')
+        return v
+    
+    @validator('password')
+    def validate_password(cls, v):
+        if len(v) < 6:
+            raise ValueError('Пароль должен содержать минимум 6 символов')
+        return v
+    
+    @validator('role')
+    def validate_role(cls, v):
+        allowed_roles = ['patient', 'doctor', 'clinic', 'admin']
+        if v not in allowed_roles:
+            raise ValueError(f'Роль должна быть одной из: {", ".join(allowed_roles)}')
+        return v
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=1, description="Пароль обязателен")
 
 class UserResponse(BaseModel):
     id: str
