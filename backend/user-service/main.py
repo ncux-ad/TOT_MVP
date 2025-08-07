@@ -426,44 +426,68 @@ async def get_users(
     limit: int = 10,
     db: Session = Depends(get_db)
 ):
-    """Получение списка пользователей с пагинацией"""
-    offset = (page - 1) * limit
+    """Получение списка пользователей"""
+    skip = (page - 1) * limit
     
     # Получаем общее количество пользователей
     total = db.query(User).count()
     
     # Получаем пользователей с пагинацией
-    users = db.query(User).offset(offset).limit(limit).all()
+    users = db.query(User).offset(skip).limit(limit).all()
     
-    # Преобразуем в список UserResponse
-    users_response = []
+    # Преобразуем в словари
+    users_data = []
     for user in users:
-        users_response.append(UserResponse(
-            id=user.id,
-            email=user.email,
-            phone=user.phone,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            role=user.role,
-            is_active=user.is_active,
-            is_verified=user.is_verified,
-            specialization=user.specialization,
-            license_number=user.license_number,
-            experience_years=user.experience_years,
-            clinic_name=user.clinic_name,
-            clinic_address=user.clinic_address,
-            clinic_license=user.clinic_license,
-            created_at=user.created_at,
-            updated_at=user.updated_at
-        ))
+        users_data.append({
+            "id": user.id,
+            "email": user.email,
+            "phone": user.phone,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "role": user.role,
+            "is_active": user.is_active,
+            "is_verified": user.is_verified,
+            "specialization": user.specialization,
+            "license_number": user.license_number,
+            "experience_years": user.experience_years,
+            "clinic_name": user.clinic_name,
+            "clinic_address": user.clinic_address,
+            "clinic_license": user.clinic_license,
+            "created_at": user.created_at,
+            "updated_at": user.updated_at
+        })
     
     return {
-        "users": users_response,
+        "users": users_data,
         "total": total,
         "page": page,
         "limit": limit,
         "pages": (total + limit - 1) // limit
     }
+
+@app.get("/api/doctors/list")
+async def get_doctors_list(db: Session = Depends(get_db)):
+    """Получение списка врачей"""
+    doctors = db.query(User).filter(User.role == "doctor").all()
+    
+    doctors_data = []
+    for doctor in doctors:
+        doctors_data.append({
+            "id": doctor.id,
+            "first_name": doctor.first_name,
+            "last_name": doctor.last_name,
+            "specialization": doctor.specialization,
+            "license_number": doctor.license_number,
+            "experience_years": doctor.experience_years,
+            "email": doctor.email,
+            "phone": doctor.phone,
+            "is_active": doctor.is_active,
+            "is_verified": doctor.is_verified,
+            "created_at": doctor.created_at,
+            "updated_at": doctor.updated_at
+        })
+    
+    return {"doctors": doctors_data}
 
 @app.get("/health")
 async def health_check():

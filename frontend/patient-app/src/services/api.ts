@@ -85,7 +85,10 @@ export const paymentsAPI = {
     api.get(`/payments/${id}`),
   
   getWallet: () => 
-    api.get('/payments/wallets/me'),
+    api.get('/wallets/me'),
+  
+  getTransactions: () => 
+    api.get('/transactions/user/me'),
 };
 
 export const chatAPI = {

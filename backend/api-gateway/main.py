@@ -101,9 +101,13 @@ async def forward_request(
     # Для User Service не передаем токен для аутентификации
     # User Service сам обрабатывает аутентификацию
     if user_token and service_name != "user":
-        # Для других сервисов передаем через X-User-ID и X-User-Role
-        request_headers["X-User-ID"] = str(user_token.get("user_id"))
-        request_headers["X-User-Role"] = user_token.get("role", "")
+        if service_name == "payment":
+            # Для Payment Service передаем Authorization header
+            request_headers["Authorization"] = f"Bearer {user_token.get('user_id')}"
+        else:
+            # Для других сервисов передаем через X-User-ID и X-User-Role
+            request_headers["X-User-ID"] = str(user_token.get("user_id"))
+            request_headers["X-User-Role"] = user_token.get("role", "")
     
     try:
         logger.info(f"Forwarding request to {service_name}: {url}")
@@ -276,6 +280,11 @@ async def create_booking(data: dict, user_token: dict = Depends(verify_token)):
     """Создание заказа вызова врача"""
     return await forward_request("booking", "/bookings", "POST", data, user_token=user_token)
 
+@app.get("/bookings")
+async def get_bookings(user_token: dict = Depends(verify_token)):
+    """Получение списка заказов пользователя"""
+    return await forward_request("booking", "/bookings", "GET", user_token=user_token)
+
 @app.get("/bookings/{booking_id}")
 async def get_booking(booking_id: str, user_token: dict = Depends(verify_token)):
     """Получение информации о заказе"""
@@ -285,6 +294,34 @@ async def get_booking(booking_id: str, user_token: dict = Depends(verify_token))
 async def cancel_booking(booking_id: str, user_token: dict = Depends(verify_token)):
     """Отмена заказа"""
     return await forward_request("booking", f"/bookings/{booking_id}/cancel", "PUT", user_token=user_token)
+
+# Payment Service routes
+@app.post("/payments/create")
+async def create_payment(data: dict, user_token: dict = Depends(verify_token)):
+    """Создание платежа"""
+    return await forward_request("payment", "/payments/", "POST", data, user_token=user_token)
+
+@app.get("/payments")
+async def get_payments(user_token: dict = Depends(verify_token)):
+    """Получение списка платежей пользователя"""
+    return await forward_request("payment", "/payments/", "GET", user_token=user_token)
+
+@app.get("/payments/{payment_id}")
+async def get_payment(payment_id: str, user_token: dict = Depends(verify_token)):
+    """Получение информации о платеже"""
+    return await forward_request("payment", f"/payments/{payment_id}", "GET", user_token=user_token)
+
+@app.get("/wallets/me")
+async def get_wallet(user_token: dict = Depends(verify_token)):
+    """Получение кошелька пользователя"""
+    user_id = user_token.get("user_id")
+    return await forward_request("payment", f"/wallets/{user_id}", "GET", user_token=user_token)
+
+@app.get("/transactions/user/me")
+async def get_user_transactions(user_token: dict = Depends(verify_token)):
+    """Получение транзакций пользователя"""
+    user_id = user_token.get("user_id")
+    return await forward_request("payment", f"/transactions/user/{user_id}", "GET", user_token=user_token)
 
 # Geo Service routes
 @app.get("/geo/doctors/nearby")
@@ -297,17 +334,6 @@ async def get_nearby_doctors(lat: float, lon: float, radius: float = 5.0, user_t
 async def track_location(data: dict, user_token: dict = Depends(verify_token)):
     """Отслеживание местоположения"""
     return await forward_request("geo", "/geo/track", "POST", data, user_token=user_token)
-
-# Payment Service routes
-@app.post("/payments/create")
-async def create_payment(data: dict, user_token: dict = Depends(verify_token)):
-    """Создание платежа"""
-    return await forward_request("payment", "/payments/create", "POST", data, user_token=user_token)
-
-@app.get("/payments/{payment_id}")
-async def get_payment(payment_id: str, user_token: dict = Depends(verify_token)):
-    """Получение информации о платеже"""
-    return await forward_request("payment", f"/payments/{payment_id}", "GET", user_token=user_token)
 
 # Chat Service routes
 @app.post("/chat/rooms")
@@ -490,10 +516,13 @@ async def api_delete_doctor(doctor_id: str, user_token: dict = Depends(verify_to
 
 @app.get("/api/doctors/list")
 async def api_get_doctors_list(user_token: dict = Depends(verify_token)):
-    """Получение списка врачей для форм"""
-    if user_token.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Доступ запрещен")
-    return await forward_request("profile", "/doctor-profiles/", "GET", user_token=user_token)
+    """Получение списка врачей (требует аутентификации)"""
+    return await forward_request("user", "/api/doctors/list", "GET", user_token=user_token)
+
+@app.get("/doctors")
+async def get_doctors_list():
+    """Получение списка врачей (без аутентификации)"""
+    return await forward_request("user", "/api/doctors/list", "GET")
 
 @app.get("/api/clinics")
 async def api_get_clinics(
