@@ -13,7 +13,6 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - tot-network
     restart: unless-stopped
@@ -173,160 +172,24 @@ services:
     restart: unless-stopped
 
   # Заглушки для остальных сервисов
-  chat-service:
-    build:
-      context: ./backend/chat-service
-      dockerfile: Dockerfile
-    container_name: tot-chat-service
-    ports:
-      - "8007:8007"
-    environment:
-      - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
-      - REDIS_URL=redis://redis:6379
-      - ENVIRONMENT=${ENVIRONMENT:-development}
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - tot-network
-    restart: unless-stopped
+  # chat-service: (отключено, директории нет)
 
-  rating-service:
-    build:
-      context: ./backend/rating-service
-      dockerfile: Dockerfile
-    container_name: tot-rating-service
-    ports:
-      - "8008:8008"
-    environment:
-      - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
-      - REDIS_URL=redis://redis:6379
-      - ENVIRONMENT=${ENVIRONMENT:-development}
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - tot-network
-    restart: unless-stopped
+  # rating-service: (отключено, директории нет)
 
-  event-service:
-    build:
-      context: ./backend/event-service
-      dockerfile: Dockerfile
-    container_name: tot-event-service
-    ports:
-      - "8009:8009"
-    environment:
-      - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
-      - REDIS_URL=redis://redis:6379
-      - ENVIRONMENT=${ENVIRONMENT:-development}
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - tot-network
-    restart: unless-stopped
+  # event-service: (отключено, директории нет)
 
-  emergency-service:
-    build:
-      context: ./backend/emergency-service
-      dockerfile: Dockerfile
-    container_name: tot-emergency-service
-    ports:
-      - "8010:8010"
-    environment:
-      - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
-      - REDIS_URL=redis://redis:6379
-      - ENVIRONMENT=${ENVIRONMENT:-development}
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - tot-network
-    restart: unless-stopped
+  # emergency-service: (отключено, директории нет)
 
-  security-service:
-    build:
-      context: ./backend/security-service
-      dockerfile: Dockerfile
-    container_name: tot-security-service
-    ports:
-      - "8011:8011"
-    environment:
-      - DATABASE_URL=postgresql://tot_user:tot_password@postgres:5432/tot_mvp
-      - REDIS_URL=redis://redis:6379
-      - ENVIRONMENT=${ENVIRONMENT:-development}
-    depends_on:
-      - postgres
-      - redis
-    networks:
-      - tot-network
-    restart: unless-stopped
+  # security-service: (отключено, директории нет)
 
   # Frontend приложения (заглушки)
-  patient-app:
-    build:
-      context: ./frontend/patient-app
-      dockerfile: Dockerfile
-    container_name: tot-patient-app
-    ports:
-      - "3000:3000"
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000
-      - REACT_APP_ENVIRONMENT=${ENVIRONMENT:-development}
-    depends_on:
-      - api-gateway
-    networks:
-      - tot-network
-    restart: unless-stopped
+  # patient-app: (отключено, нет Dockerfile — запускается локально через npm)
 
-  doctor-app:
-    build:
-      context: ./frontend/doctor-app
-      dockerfile: Dockerfile
-    container_name: tot-doctor-app
-    ports:
-      - "3001:3000"
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000
-      - REACT_APP_ENVIRONMENT=${ENVIRONMENT:-development}
-    depends_on:
-      - api-gateway
-    networks:
-      - tot-network
-    restart: unless-stopped
+  # doctor-app: (отключено, директории нет)
 
-  clinic-web:
-    build:
-      context: ./frontend/clinic-web
-      dockerfile: Dockerfile
-    container_name: tot-clinic-web
-    ports:
-      - "3002:3000"
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000
-      - REACT_APP_ENVIRONMENT=${ENVIRONMENT:-development}
-    depends_on:
-      - api-gateway
-    networks:
-      - tot-network
-    restart: unless-stopped
+  # clinic-web: (отключено, директории нет)
 
-  admin-panel:
-    build:
-      context: ./frontend/admin-panel
-      dockerfile: Dockerfile
-    container_name: tot-admin-panel
-    ports:
-      - "3003:3000"
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000
-      - REACT_APP_ENVIRONMENT=${ENVIRONMENT:-development}
-    depends_on:
-      - api-gateway
-    networks:
-      - tot-network
-    restart: unless-stopped
+  # admin-panel: (отключено, нет Dockerfile — запускается локально через npm)
 
   # Мониторинг
   prometheus:
@@ -334,16 +197,6 @@ services:
     container_name: tot-prometheus
     ports:
       - "9090:9090"
-    volumes:
-      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
     networks:
       - tot-network
     restart: unless-stopped
@@ -355,9 +208,6 @@ services:
       - "3004:3000"
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./docker/grafana/provisioning:/etc/grafana/provisioning
     networks:
       - tot-network
     restart: unless-stopped
@@ -369,15 +219,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    volumes:
-      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
-      - ./docker/nginx/ssl:/etc/nginx/ssl
     depends_on:
       - api-gateway
-      - patient-app
-      - doctor-app
-      - clinic-web
-      - admin-panel
     networks:
       - tot-network
     restart: unless-stopped

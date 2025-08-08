@@ -1,5 +1,19 @@
 # Task Tracker - ТОТ MVP
 
+## Задача: Перевод DEV на PostgreSQL и чистка инфраструктуры
+- **Статус**: В процессе
+- **Описание**: Единообразие БД (PostgreSQL в DEV), безопасный gateway (httpx/async), чистый docker-compose (только существующие сервисы), корректные npm-скрипты
+- **Шаги выполнения**:
+  - [x] Перевод API Gateway на httpx AsyncClient, тайм-ауты, без verify=False
+  - [x] CORS/Trusted Hosts в ENV (ALLOWED_HOSTS, CORS_ORIGINS)
+  - [x] env.example: добавлен UPSTREAM_TIMEOUT_SECONDS
+  - [x] Корневой package.json: удалены doctor-app/clinic-web из скриптов
+  - [x] docker-compose: отключены отсутствующие сервисы, убраны несуществующие конфиги
+  - [ ] Единообразие БД: удалить локальные SQLite файлы tot_mvp.db из корня и сервисов
+  - [ ] Обновить README/DEPLOYMENT под PostgreSQL-only DEV
+  - [ ] Прогон smoke-тестов (health, auth, basic flows)
+- **Зависимости**: Docker/PostgreSQL/Redis
+
 ## Задача: Миграция с CRA на Vite
 - **Статус**: Завершена ✅
 - **Описание**: Переход frontend приложений (admin-panel и patient-app) с Create React App на Vite для улучшения производительности и современности

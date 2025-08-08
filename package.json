@@ -5,27 +5,25 @@
   "private": true,
   "workspaces": [
     "backend/*",
-    "frontend/*",
-    "shared/*"
+    "frontend/*"
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "dev:backend": "docker-compose up backend",
-    "dev:frontend": "concurrently \"npm run dev:patient-app\" \"npm run dev:doctor-app\" \"npm run dev:clinic-web\" \"npm run dev:admin-panel\"",
+    "dev:frontend": "concurrently \"npm run dev:patient-app\" \"npm run dev:admin-panel\"",
     "dev:patient-app": "cd frontend/patient-app && npm run dev",
     "dev:doctor-app": "cd frontend/doctor-app && npm run dev",
     "dev:clinic-web": "cd frontend/clinic-web && npm run dev",
     "dev:admin-panel": "cd frontend/admin-panel && npm run dev",
     "build": "npm run build:backend && npm run build:frontend",
     "build:backend": "docker-compose build backend",
-    "build:frontend": "npm run build:patient-app && npm run build:doctor-app && npm run build:clinic-web && npm run build:admin-panel",
+    "build:frontend": "npm run build:patient-app && npm run build:admin-panel",
     "build:patient-app": "cd frontend/patient-app && npm run build",
-    "build:doctor-app": "cd frontend/doctor-app && npm run build",
-    "build:clinic-web": "cd frontend/clinic-web && npm run build",
+    
     "build:admin-panel": "cd frontend/admin-panel && npm run build",
     "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "cd backend && python -m pytest",
-    "test:frontend": "npm run test:patient-app && npm run test:doctor-app && npm run test:clinic-web && npm run test:admin-panel",
+    "test:frontend": "npm run test:patient-app && npm run test:admin-panel",
     "lint": "npm run lint:backend && npm run lint:frontend",
     "lint:backend": "cd backend && flake8",
     "lint:frontend": "eslint frontend/**/*.{js,jsx,ts,tsx}",

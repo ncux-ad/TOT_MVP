@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, Request
+from fastapi.responses import JSONResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -22,7 +23,10 @@ app = FastAPI(
 # Настройка CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003").split(","),
+    allow_origins=os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003",
+    ).split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -31,7 +35,7 @@ app.add_middleware(
 # Настройка безопасности
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"]  # В продакшене указать конкретные хосты
+    allowed_hosts=os.getenv("ALLOWED_HOSTS", "*").split(","),
 )
 
 # Схема аутентификации
@@ -88,7 +92,10 @@ async def forward_request(
     headers: Optional[dict] = None,
     user_token: Optional[dict] = None
 ) -> dict:
-    """Пересылка запроса к соответствующему сервису"""
+    """Пересылка запроса к соответствующему сервису.
+
+    Возвращает объект FastAPI Response, сохраняя код статуса и тип контента.
+    """
     if service_name not in SERVICES:
         raise HTTPException(status_code=404, detail=f"Service {service_name} not found")
     
@@ -96,57 +103,41 @@ async def forward_request(
     url = f"{service_url}{path}"
     
     # Подготовка заголовков
-    request_headers = headers or {}
-    
-    # Для User Service не передаем токен для аутентификации
-    # User Service сам обрабатывает аутентификацию
+    request_headers = headers.copy() if headers else {}
+
+    # Для микросервисов, отличных от user, пробрасываем контекст пользователя через заголовки
     if user_token and service_name != "user":
-        if service_name == "payment":
-            # Для Payment Service передаем Authorization header
-            request_headers["Authorization"] = f"Bearer {user_token.get('user_id')}"
-        else:
-            # Для других сервисов передаем через X-User-ID и X-User-Role
-            request_headers["X-User-ID"] = str(user_token.get("user_id"))
-            request_headers["X-User-Role"] = user_token.get("role", "")
-    
+        request_headers["X-User-ID"] = str(user_token.get("user_id"))
+        request_headers["X-User-Role"] = user_token.get("role", "")
+
+    timeout_seconds = float(os.getenv("UPSTREAM_TIMEOUT_SECONDS", "30"))
+
     try:
-        logger.info(f"Forwarding request to {service_name}: {url}")
-        logger.info(f"Method: {method}, Headers: {request_headers}")
-        if data:
-            logger.info(f"Data: {data}")
-            
-        # Используем синхронные запросы для совместимости
-        import requests
-        
-        if method.upper() == "GET":
-            response = requests.get(url, headers=request_headers, timeout=30.0, verify=False)
-        elif method.upper() == "POST":
-            response = requests.post(url, json=data, headers=request_headers, timeout=30.0, verify=False)
-        elif method.upper() == "PUT":
-            response = requests.put(url, json=data, headers=request_headers, timeout=30.0, verify=False)
-        elif method.upper() == "DELETE":
-            response = requests.delete(url, headers=request_headers, timeout=30.0, verify=False)
-        else:
-            raise HTTPException(status_code=405, detail="Method not allowed")
-        
-        logger.info(f"Response status: {response.status_code}")
-        logger.info(f"Response headers: {dict(response.headers)}")
-        logger.info(f"Response text: {response.text[:200]}...")
-        
-        # Возвращаем данные напрямую, без обертки
-        if response.headers.get("content-type", "").startswith("application/json"):
-            return response.json()
-        else:
-            return {"message": response.text}
-    except requests.RequestException as e:
+        logger.info(f"Forwarding {method.upper()} to {service_name}: {url}")
+        async with httpx.AsyncClient(timeout=timeout_seconds) as client:
+            method_upper = method.upper()
+            if method_upper == "GET":
+                upstream_response = await client.get(url, headers=request_headers)
+            elif method_upper == "POST":
+                upstream_response = await client.post(url, json=data, headers=request_headers)
+            elif method_upper == "PUT":
+                upstream_response = await client.put(url, json=data, headers=request_headers)
+            elif method_upper == "DELETE":
+                upstream_response = await client.delete(url, headers=request_headers)
+            else:
+                raise HTTPException(status_code=405, detail="Method not allowed")
+
+        content_type = upstream_response.headers.get("content-type", "")
+        status_code = upstream_response.status_code
+
+        if content_type.startswith("application/json"):
+            # Сохраняем исходный статус код
+            return JSONResponse(content=upstream_response.json(), status_code=status_code)
+        return PlainTextResponse(content=upstream_response.text, status_code=status_code)
+    except httpx.RequestError as e:
         logger.error(f"Request error to {service_name}: {e}")
         logger.error(f"URL: {url}")
         raise HTTPException(status_code=503, detail=f"Service {service_name} unavailable")
-    except requests.HTTPError as e:
-        logger.error(f"HTTP error from {service_name}: {e.response.status_code}")
-        logger.error(f"URL: {url}")
-        # Возвращаем оригинальный статус и данные от сервиса
-        raise HTTPException(status_code=e.response.status_code, detail=e.response.text)
     except Exception as e:
         logger.error(f"Unexpected error forwarding to {service_name}: {e}")
         logger.error(f"URL: {url}")
@@ -166,36 +157,31 @@ async def health_check():
 async def test_connection():
     """Тест подключения к User Service"""
     try:
-        import requests
-        response = requests.get("http://localhost:8001/health", timeout=5.0, verify=False)
-        return {
-            "status": "success",
-            "user_service_status": response.status_code,
-            "user_service_response": response.text
-        }
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get("http://localhost:8001/health")
+            return {
+                "status": "success",
+                "user_service_status": response.status_code,
+                "user_service_response": response.text,
+            }
     except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e)
-        }
+        return {"status": "error", "error": str(e)}
 
 @app.get("/test-auth")
 async def test_auth():
     """Тест авторизации через User Service"""
     try:
-        import requests
-        data = {"email": "admin@tot.ru", "password": "admin123"}
-        response = requests.post("http://localhost:8001/auth/login", json=data, timeout=5.0, verify=False)
-        return {
-            "status": "success",
-            "status_code": response.status_code,
-            "response": response.text[:200] + "..." if len(response.text) > 200 else response.text
-        }
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            data = {"email": "admin@tot.ru", "password": "admin123"}
+            response = await client.post("http://localhost:8001/auth/login", json=data)
+            text = response.text
+            return {
+                "status": "success",
+                "status_code": response.status_code,
+                "response": text[:200] + "..." if len(text) > 200 else text,
+            }
     except Exception as e:
-        return {
-            "status": "error",
-            "error": str(e)
-        }
+        return {"status": "error", "error": str(e)}
 
 # User Service routes
 @app.post("/auth/register")
